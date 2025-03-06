@@ -169,14 +169,15 @@ class Networking(Node):
                 'access_decision': verdict
             }
 
-            self.send_message_to_node('4',access_decision_data)
-
             # Append the new access decision data to the existing list
             access_decisions.append(access_decision_data)
 
-            # Write the updated data to the JSON file
+            # Write the updated data to the JSON file BEFORE sending the message
             with open(file_path, 'w') as file:
                 json.dump(access_decisions, file, indent=4)
+
+            # Now send the message after ensuring data is persisted
+            self.send_message_to_node('4', access_decision_data)
 
     def process_message_from_policy_engine(self, sender, message):
         print(f"Received a message from Policy Engine Node [{sender}]: {message}")
@@ -247,4 +248,4 @@ class Networking(Node):
             
     def node_request_to_stop(self):
         print(f"\nStopping the {self.get_node_role(self.id)} node")
-        
+

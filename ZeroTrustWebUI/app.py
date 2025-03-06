@@ -169,6 +169,7 @@ def home():
                         print("Failed to load events data.")
 
                     all_users = keycloak_admin.get_users()
+                    print(all_users)
 
                     # Define the path to the JSON file
                     parent_directory = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
@@ -184,7 +185,7 @@ def home():
                             'created_timestamp': user['createdTimestamp'],
                             'email_verified': user['emailVerified'],
                             'totp_enabled': user['totp'],
-                            'user_role': user_role if user['id'] == user_id else user.get('user_role') # Assign user role if IDs match
+                            'user_role': user_role if user['id'] == user_id else None  # We'll preserve roles from existing data
                         }
                         extracted_data.append(user_info)
 
@@ -194,22 +195,20 @@ def home():
                         with open(file_path, 'r') as json_file:
                             existing_data = json.load(json_file)
 
-                    # Update existing records without overwriting existing roles
-                    for existing_user in existing_data:
-                        for new_user in extracted_data:
-                            if existing_user['user_id'] == new_user['user_id'] and new_user['user_role'] is not None:
-                                existing_user['user_role'] = new_user['user_role']
-                                break
+                    # Create a mapping of user_id to user_role from existing data
+                    existing_roles = {user['user_id']: user.get('user_role') for user in existing_data}
 
-                    # Combine existing and new data without duplicates
-                    user_ids_in_file = {user['user_id'] for user in existing_data}
-                    for new_user in extracted_data:
-                        if new_user['user_id'] not in user_ids_in_file:
-                            existing_data.append(new_user)
+                    # Update extracted data with existing roles where applicable
+                    for user in extracted_data:
+                        if user['user_id'] in existing_roles and existing_roles[user['user_id']] is not None:
+                            user['user_role'] = existing_roles[user['user_id']]
+                        elif user['user_id'] == user_id:
+                            # Ensure current user has their role set
+                            user['user_role'] = user_role
 
-                    # Store the updated and new data in the JSON file
+                    # Store the updated data in the JSON file
                     with open(file_path, 'w') as json_file:
-                        json.dump(existing_data, json_file, indent=4)
+                        json.dump(extracted_data, json_file, indent=4)
 
                     return render_template('home.html', username=username, email=email, user_id=user_id, user_role=user_role)
                 else:

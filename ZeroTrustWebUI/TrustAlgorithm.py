@@ -88,7 +88,12 @@ def calculate_experience_score(created_timestamp):
 
     return experience_score
 
+#function to calculate the subject's score based on the access request and contextual information  such as location 
+# Get the parent directory path
+parent_directory = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
 
+# File path to policyConfiguration.yml
+#file_path = os.path.join('policyConfiguration.yml')  # Update the path accordingly
 file_path = 'policyConfiguration.yml'
 
 # Load policyConfiguration.yml file
@@ -165,7 +170,10 @@ def calculate_access_request_score(access_request_data, night_start=night_start_
 
 # Function to calculate Overall Trust Score
 def calculate_overall_trust_score(user_id):
-   
+    #user_data_file_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'user_data.json')
+    #access_request_data_file_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'access_requests.json')
+    #auth_data_file_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'auth_data.json')
+    
     # Get user data using provided functions
     identity_data = get_user_identity_data_by_id(user_id,'user_data.json')
     access_request_data = get_latest_access_request(user_id, 'access_requests.json')
