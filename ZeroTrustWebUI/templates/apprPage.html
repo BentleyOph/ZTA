@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{url_for('static', filename='css/approver-page.css')}}">
+    <title>Approver Page</title>
+</head>
+<body>
+    <div class="container">
+        <button class="logout-btn" onclick="logout()">Logout</button>
+        <div class="user-identifiers">
+            <p>Welcome, <span style="font-weight: bold;" id="username">{{ username }}</span></p>
+            <p>Email: <span style="font-style: italic;" id="email">{{ email }}</span></p>
+            <p>Role: <b><span style="color: #FFFDD0;" id="userRole">{{ user_role }}</span></b></p>
+            <p>User ID: <span style="text-decoration: underline;" id="userId">{{ user_id }}</span></p>
+        </div>
+
+        <h1>Approve PAM Requests</h1>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Requestor ID</th>
+                        <th>Requestor Name</th>
+                        <th>Resource Requested</th>
+                        <th>Reason For Access</th>
+                        <th>Access Duration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for request in access_requests %}
+                    <tr>
+                        <td>{{ request.requestor_id }}</td>
+                        <td>{{ request.requestor_username }}</td>
+                        <td>{{ request.resource_name }}</td>
+                        <td>{{ request.reason_for_access }}</td>
+                        <td>{{ request.access_duration }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="button-container">
+            <p>SECRET SHARE:</p>
+            <textarea id="secretShare" rows="4" cols="50"></textarea>
+            <button class="approve-btn" onclick="approveRequest()">Approve</button>
+        </div>
+
+        <div class="footer">
+            &copy; 2023 LeoTech LTD
+        </div>
+    </div>
+
+    <script>
+        function approveRequest() {
+            var secretShare = document.getElementById("secretShare").value;
+    
+            fetch('/approve_request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'approve',
+                    approverId: '{{ user_id }}',
+                    secretShare: secretShare
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = '/success';
+                } else {
+                    // Handle errors here
+                }
+            })
+            .catch(error => {
+                // Handle network errors here
+            });
+        }
+    </script>
+    
+</body>
+</html>

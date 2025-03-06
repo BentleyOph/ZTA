@@ -1,0 +1,10 @@
+venv/
+/build
+/dist
+*.pyc
+* ~
+*.swp
+__pycache__
+.aider*
+/OpenLDAP
+/Keycloak/postgres/data

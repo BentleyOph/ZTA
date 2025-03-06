@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{url_for('static', filename='css/approval-status.css')}}">
+
+    <title>PAM Request Status</title>
+</head>
+<body>
+    <div class="container">
+        <h1>PAM Request Status</h1>
+
+        <div class="approval-info">
+            <p>{{ approval_info }}</p>
+        </div>
+
+        <div class="approval-info">
+            <p>At least {{ threshold }} approvers(80%) needed to reconstruct the secret key.</p>
+        </div>
+
+        <div class="remaining-time" id="remainingTime">Time Left: </div>
+
+        <div class="message">
+            <p id = "message">{{ message }}</p>
+        </div>
+
+        <!-- Heading for reconstructed secret key -->
+        <h2>Reconstructed Secret Key</h2>
+        
+        <!-- Text area for reconstructed secret key -->
+        <textarea id="reconstructedSecretKey" rows="4" cols="50" placeholder="Reconstructed Secret Key" readonly>{{reconstructed_secret}}</textarea>
+
+        <!-- Button to view protected resource -->
+        <button class="view-resource-btn" onclick="viewProtectedResource()">View Protected Resource</button>
+
+        <script>
+            function viewProtectedResource() {
+                window.location.href = "/enterSecretKey";
+            }
+
+            function updateRemainingTime() {
+                var currentTime = new Date();
+                var expirationTime = localStorage.getItem("expirationTime");
+
+                if (!expirationTime) {
+                    expirationTime = new Date('{{ expiration_time }}');
+                    localStorage.setItem("expirationTime", expirationTime); // Store expiration time in local storage
+                } else {
+                    expirationTime = new Date(expirationTime);
+                }
+
+                var timeDiff = expirationTime.getTime() - currentTime.getTime();
+                var totalSeconds = Math.floor(timeDiff / 1000);
+                var remainingTimeElement = document.getElementById('remainingTime');
+
+                if (totalSeconds <= 0) {
+                    remainingTimeElement.textContent = "Time remaining: 0 minutes 0 seconds";
+                    reconstructSecret();
+                    localStorage.removeItem("expirationTime");
+                    clearInterval(refreshInterval); // Stop refreshing the page
+                } else {
+                    var minutes = Math.floor(totalSeconds / 60);
+                    var seconds = totalSeconds % 60;
+                    remainingTimeElement.textContent = "Time remaining: " + minutes + " minutes " + seconds + " seconds";
+                }
+            }
+
+            function reconstructSecret() {
+                fetch('/approval_status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action: 'reconstruct_secret' }),
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.hasOwnProperty('ERR_THRESH')) {
+                        document.getElementById('message').innerHTML = 'Approval Threshold not reached!';
+                    }
+                    else{
+                        if(data.hasOwnProperty('reconstructed_secret')){
+                            document.getElementById('reconstructedSecretKey').value = data.reconstructed_secret;
+                            document.getElementById('message').innerHTML = 'Secret Key reconstructed using the Approval threshold!';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Handle any errors here
+                });
+            }
+            
+            var counter =0; 
+            // Call the function to initiate the countdown
+            var refreshInterval = setInterval(function() {
+                updateRemainingTime();
+                counter ++;
+                if (counter ==5)
+                {
+                    counter =0;
+                    location.reload();
+                }
+            }, 1000); // Refresh every second
+        </script>
+        
+    </div>
+</body>
+</html>

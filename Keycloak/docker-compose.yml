@@ -1,0 +1,55 @@
+name: docker-stack
+services:
+  keycloak:
+    command: ["start-dev"]
+    container_name: keycloak
+    depends_on:
+      postgres:
+        condition: service_started
+    environment:
+      KC_DB: postgres
+      KC_DB_PASSWORD: postgres
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_URL_HOST: postgres
+      KC_DB_USERNAME: postgres
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HOSTNAME_URL: http://localhost
+      KC_HTTP_ENABLED: true
+      KC_PROXY: edge
+    hostname: keycloak
+    image: quay.io/keycloak/keycloak:latest
+    ports:
+      - "8080:8080"
+    networks:
+      default: null
+      postgresql: null
+    restart: always
+    volumes:
+    - type: bind
+      source: /home/docker/docker-stack/keycloak/volumes/opt/keycloak/providers
+      target: /opt/keycloak/providers
+      bind:
+        create_host_path: true
+  postgres:
+    hostname: postgres # I build my own postgres image, but the standard one should work, too.
+    image: postgres:14
+    environment:
+      POSTGRES_PASSWORD: postgres  # Should match KC_DB_PASSWORD
+      POSTGRES_USER: postgres      # Should match KC_DB_USERNAME
+      POSTGRES_DB: keycloak          # Create the Keycloak database
+    networks:
+      postgresql: null
+    restart: always
+    volumes:
+    - type: bind
+      source: /home/docker/docker-stack/postgres/volumes/14/data
+      target: /var/lib/postgresql/data
+      bind:
+        create_host_path: true
+networks:
+  default:
+    name: docker-stack_default
+  postgresql:
+    name: docker-stack_postgresql
+    internal: true

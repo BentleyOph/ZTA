@@ -1,0 +1,16 @@
+adminThreshold: '0.6'
+approverThreshold: '0.9'
+authScoreWeight: '0.5'
+contextScoreWeight: '0.5'
+expScoreWeight: '0.5'
+highRiskLocations:
+- KE
+lowRiskLocations:
+- ''
+mediumRiskLocations:
+- KE
+periodEndInput: 06:00:00
+periodStartInput: 00:00:00
+securityViewerThreshold: '0.4'
+signInRiskThreshold: '0.5'
+userIdentityWeight: '0.5'
