@@ -2444,5 +2444,61 @@
         "device_mac": "00:15:5d:ef:ee:da",
         "device_vendor": "Microsoft Corporation",
         "device_OS": "Win32"
+    },
+    {
+        "ID": 177,
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "intent": "Access Request",
+        "resource_requested": "Resource 1",
+        "access_request_time": "2025-03-07 02:54:07",
+        "public_ip_address": "102.211.213.38",
+        "location": "Nairobi/KE",
+        "device_type": "Desktop",
+        "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+        "device_mac": "00:15:5d:b4:9a:be",
+        "device_vendor": "Microsoft Corporation",
+        "device_OS": "Win32"
+    },
+    {
+        "ID": 178,
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "intent": "Access Request",
+        "resource_requested": "Resource 1",
+        "access_request_time": "2025-03-07 02:55:04",
+        "public_ip_address": "102.211.213.38",
+        "location": "Nairobi/KE",
+        "device_type": "Desktop",
+        "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+        "device_mac": "00:15:5d:b4:9a:be",
+        "device_vendor": "Microsoft Corporation",
+        "device_OS": "Win32"
+    },
+    {
+        "ID": 179,
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "intent": "Access Request",
+        "resource_requested": "Resource 1",
+        "access_request_time": "2025-03-07 02:55:06",
+        "public_ip_address": "102.211.213.38",
+        "location": "Nairobi/KE",
+        "device_type": "Desktop",
+        "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+        "device_mac": "00:15:5d:b4:9a:be",
+        "device_vendor": "Microsoft Corporation",
+        "device_OS": "Win32"
+    },
+    {
+        "ID": 180,
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "intent": "Access Request",
+        "resource_requested": "Resource 1",
+        "access_request_time": "2025-03-07 02:58:41",
+        "public_ip_address": "102.211.213.38",
+        "location": "Nairobi/KE",
+        "device_type": "Desktop",
+        "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+        "device_mac": "00:15:5d:b4:9a:be",
+        "device_vendor": "Microsoft Corporation",
+        "device_OS": "Win32"
     }
 ]
