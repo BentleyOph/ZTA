@@ -60,3 +60,31 @@ input[type="submit"] {
 input[type="submit"]:hover {
     background-color: #45a049;
 }
+
+.checkbox-group {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 5px;
+    max-height: 150px; /* Optional: Add scroll if many options */
+    overflow-y: auto;  /* Optional: Add scroll if many options */
+}
+
+.checkbox-group div {
+    margin-bottom: 8px; /* Space between checkbox rows */
+    display: flex;      /* Align checkbox and label nicely */
+    align-items: center; /* Vertically center checkbox and label */
+}
+
+.checkbox-group input[type="checkbox"] {
+    margin-right: 8px; /* Space between checkbox and its label */
+    width: auto;       /* Override the default 100% width for inputs */
+    cursor: pointer;
+}
+
+.checkbox-group label {
+    display: inline;   /* Keep label on the same line as checkbox */
+    margin-top: 0;     /* Override the default block label margin */
+    font-weight: normal; /* Adjust font weight if needed */
+    cursor: pointer;
+}

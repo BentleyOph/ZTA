@@ -425,6 +425,8 @@ def privilegedAccess():
     global RESOURCE_SECRET_KEY
 
     RESOURCE_SECRET_KEY = PAM.generate_secret_message(45)
+    # Store resource secret in user session to persist across requests
+    session['resource_secret_key'] = RESOURCE_SECRET_KEY
     
     secret_shares_list = PAM.generate_secret_shares(THRESHOLD,num_shares,RESOURCE_SECRET_KEY,secret_key_identifier)
 
@@ -538,7 +540,7 @@ managing the state of the latest privileged access request and handling the secr
 """
 @app.route('/approval_status', methods=['GET','POST'])
 def approval_status():
-
+    global THRESHOLD
     #check if there is a POST request
     if request.method == 'POST':
          data = request.json
@@ -549,18 +551,54 @@ def approval_status():
             latest_request_id = latest_request.id
             approvers_count = Approver.query.filter_by(request_id=latest_request_id).count()
             approved_approvers = Approver.query.filter_by(request_id=latest_request_id, approver_action='approved').count()
+
+            # initialize THRESHOLD if unset
+            if THRESHOLD is None:
+                THRESHOLD = math.floor(approvers_count * 0.8)
+
             approved_approver_shares = Approver.query.filter_by(request_id=latest_request_id, approver_action='approved').all()
             #check if the requests approved meets the minimum threshold
-            if approved_approvers == THRESHOLD and action == 'reconstruct_secret':
+            if approved_approvers >= THRESHOLD and action == 'reconstruct_secret': # Use >= for flexibility
                 message = 'Threshold for Approval Met! Reconstructing key...'
                 #reconstruct the secret key using the threshold value
                 secret_shares = [approver.approver_secret_share for approver in approved_approver_shares]
-                reconstructed_secret = str(PAM.reconstruct_secret_from_base64_shares(secret_shares))[2:-1] 
-                latest_request.requestStatus = 'approved'
-                db.session.commit()
-                return jsonify({'reconstructed_secret': reconstructed_secret})
+                
+                reconstructed_secret_val = PAM.reconstruct_secret_from_base64_shares(secret_shares)
+                reconstructed_secret_str = None
+                if isinstance(reconstructed_secret_val, bytes):
+                    try:
+                        # Attempt to decode assuming UTF-8, adjust if needed
+                        reconstructed_secret_str = reconstructed_secret_val.decode('utf-8')
+                    except UnicodeDecodeError:
+                        # Handle cases where decoding fails or isn't appropriate
+                        print("Warning: Could not decode reconstructed secret bytes to UTF-8.")
+                        # Fallback or specific error handling needed here
+                        reconstructed_secret_str = str(reconstructed_secret_val) # Less ideal fallback
+                elif isinstance(reconstructed_secret_val, str):
+                    reconstructed_secret_str = reconstructed_secret_val
+                else:
+                     print(f"Warning: Unexpected type from reconstruction: {type(reconstructed_secret_val)}")
+                     reconstructed_secret_str = str(reconstructed_secret_val) # Fallback
+
+                # Optional: Add verification print statements
+                print(f"Original Secret (Global): {RESOURCE_SECRET_KEY}")
+                print(f"Reconstructed Secret (Decoded): {reconstructed_secret_str}")
+
+                if reconstructed_secret_str == RESOURCE_SECRET_KEY:
+                    latest_request.requestStatus = 'approved'
+                    db.session.commit()
+                    return jsonify({'reconstructed_secret': reconstructed_secret_str})
+                else:
+                    # Indicate reconstruction failure or mismatch
+                    print("Error: Reconstructed secret does not match the original.")
+                    return jsonify({'ERR_RECONSTRUCT': 'Secret reconstruction failed or mismatch.'}), 500
+
+            elif approved_approvers < THRESHOLD and action == 'reconstruct_secret':
+                 return jsonify({'ERR_THRESH': f'Minimum Threshold ({THRESHOLD}) for Secret Key reconstruction Not reached! ({approved_approvers} approved)'})
             else:
-                 return jsonify({'ERR_THRESH': 'Minimum Threshold for Secret Key reconstruction Not reached!'})
+                # Handle other actions or invalid states if necessary
+                return jsonify({'message': 'Action processed or not applicable.'})
+
 
     latest_request = AccessRequest.query.order_by(AccessRequest.id.desc()).first()
 
@@ -571,30 +609,84 @@ def approval_status():
         approved_approvers = Approver.query.filter_by(request_id=latest_request_id, approver_action='approved').count()
         pending_approvers = approvers_count - approved_approvers
 
+        # initialize THRESHOLD if unset
+        if THRESHOLD is None:
+            THRESHOLD = math.floor(approvers_count * 0.8)
+
         approval_info = f'{approved_approvers}/{approvers_count} approvers approved, {pending_approvers} pending'
 
-        APPROVAL_TIME = 2
+        APPROVAL_TIME = 10
 
         current_time =datetime.now()
 
         expiration_time = current_time + timedelta(minutes=APPROVAL_TIME)
 
-        reconstructed_secret = None
+        reconstructed_secret_str = None # Initialize variable
 
-        if pending_approvers == 0:
-            message = 'All approvers have approved the request'
+        # Use threshold for reconstruction, not waiting on every approver
+        if approved_approvers >= THRESHOLD and latest_request.requestStatus != 'approved': # Check status to avoid re-reconstruction
+            message = 'Approvals threshold met. Reconstructing secret...'
             # Retrieving secret shares for all approved approvers
             approved_approver_shares = Approver.query.filter_by(request_id=latest_request_id, approver_action='approved').all()
             secret_shares = [approver.approver_secret_share for approver in approved_approver_shares]
 
             # Reconstructing the secret key from secret shares
-            reconstructed_secret = PAM.reconstruct_secret_from_base64_shares(secret_shares)
-            latest_request.requestStatus = 'approved'
-            db.session.commit() 
-        else:
-            message = ''
+            reconstructed_secret_val = PAM.reconstruct_secret_from_base64_shares(secret_shares)
+            if isinstance(reconstructed_secret_val, bytes):
+                 try:
+                     reconstructed_secret_str = reconstructed_secret_val.decode('utf-8')
+                 except UnicodeDecodeError:
+                     print("Warning: Could not decode reconstructed secret bytes to UTF-8 in GET.")
+                     reconstructed_secret_str = str(reconstructed_secret_val)
+            elif isinstance(reconstructed_secret_val, str):
+                 reconstructed_secret_str = reconstructed_secret_val
+            else:
+                 print(f"Warning: Unexpected type from reconstruction in GET: {type(reconstructed_secret_val)}")
+                 reconstructed_secret_str = str(reconstructed_secret_val)
 
-        return render_template('approval_status.html', approval_info=approval_info, message=message, reconstructed_secret=reconstructed_secret,threshold=THRESHOLD,expiration_time=expiration_time)
+            # Optional: Verification
+            print(f"Original Secret (Global - GET): {RESOURCE_SECRET_KEY}")
+            print(f"Reconstructed Secret (Decoded - GET): {reconstructed_secret_str}")
+
+            if reconstructed_secret_str == RESOURCE_SECRET_KEY:
+                latest_request.requestStatus = 'approved'
+                db.session.commit()
+                message = 'All approvers have approved. Secret reconstructed successfully.'
+            else:
+                 print("Error: Reconstructed secret does not match original in GET.")
+                 message = 'All approvers approved, but secret reconstruction failed verification.'
+                 reconstructed_secret_str = None # Don't pass failed reconstruction to template
+
+        elif latest_request.requestStatus == 'approved':
+             message = 'Request already approved.'
+             # Reconstruct the secret again if the status is already approved to display it on refresh
+             approved_approver_shares = Approver.query.filter_by(request_id=latest_request_id, approver_action='approved').all()
+             # Ensure enough shares are available (although status is approved, good practice to check)
+             if len(approved_approver_shares) >= THRESHOLD:
+                 secret_shares = [approver.approver_secret_share for approver in approved_approver_shares]
+                 reconstructed_secret_val = PAM.reconstruct_secret_from_base64_shares(secret_shares)
+                 if isinstance(reconstructed_secret_val, bytes):
+                     try:
+                         reconstructed_secret_str = reconstructed_secret_val.decode('utf-8')
+                     except UnicodeDecodeError:
+                         print("Warning: Could not decode reconstructed secret bytes to UTF-8 in approved state.")
+                         reconstructed_secret_str = str(reconstructed_secret_val)
+                 elif isinstance(reconstructed_secret_val, str):
+                     reconstructed_secret_str = reconstructed_secret_val
+                 else:
+                     print(f"Warning: Unexpected type from reconstruction in approved state: {type(reconstructed_secret_val)}")
+                     reconstructed_secret_str = str(reconstructed_secret_val)
+             else:
+                 # This case should ideally not happen if status is 'approved' based on threshold
+                 print("Warning: Request approved but not enough shares found for reconstruction.")
+                 message = "Request approved, but could not retrieve necessary shares."
+                 reconstructed_secret_str = None
+
+        else:
+            message = '' # Default message if still pending
+
+        # Pass the string version to the template
+        return render_template('approval_status.html', approval_info=approval_info, message=message, reconstructed_secret=reconstructed_secret_str, threshold=THRESHOLD, expiration_time=expiration_time)
 
     return render_template('no_requests.html')  # Render a template if no requests exist
 
@@ -627,11 +719,11 @@ def hidden_resource():
     print (f"ENTERED SECRET MESSAGE: {entered_secret_key}")
     #extract the randomized secret key from the PAM endpoint
 
-    secret_message = RESOURCE_SECRET_KEY # assign it to the reandomized secret generated at the PAM endpoint
+    secret_message = session.get('resource_secret_key', '')  # retrieve persisted resource secret from session
 
-    print(f"SECRET MESSAGE: {secret_message}")
+    print(f"SECRET MESSAGE (Global): {secret_message}") # Use the global variable
 
-    print(secret_message)
+    # Direct string comparison
     if entered_secret_key == secret_message:
         return 'Valid'
     else:

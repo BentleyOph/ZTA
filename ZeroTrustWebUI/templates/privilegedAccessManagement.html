@@ -25,11 +25,14 @@
             <input type="number" id="access_duration" name="access_duration" min="1" max="100" required>
 
             <label for="approvers">Approvers(Select at least two)</label>
-            <select id="approvers" name="approvers" multiple required>
+            <div class="checkbox-group">
                 {% for email in email_addresses %}
-                <option value="{{ email }}">{{ email }}</option>
+                <div>
+                    <input type="checkbox" id="approver_{{ loop.index }}" name="approvers" value="{{ email }}">
+                    <label for="approver_{{ loop.index }}">{{ email }}</label>
+                </div>
                 {% endfor %}
-            </select>
+            </div>
             
             <input type="submit" value="Submit PAM Request">
         </form>

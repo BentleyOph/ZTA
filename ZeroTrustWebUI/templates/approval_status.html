@@ -27,9 +27,13 @@
         <!-- Heading for reconstructed secret key -->
         <h2>Reconstructed Secret Key</h2>
         
-        <!-- Text area for reconstructed secret key -->
-        <textarea id="reconstructedSecretKey" rows="4" cols="50" placeholder="Reconstructed Secret Key" readonly>{{reconstructed_secret}}</textarea>
 
+        {% if reconstructed_secret %}
+          <div class="secret-display">
+            <code>{{ reconstructed_secret }}</code>
+          </div>
+        {% endif %}
+          
         <!-- Button to view protected resource -->
         <button class="view-resource-btn" onclick="viewProtectedResource()">View Protected Resource</button>
 
