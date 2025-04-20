@@ -1,11 +1,10 @@
 import json
 import os
 import sys
-import time
 from flask import Flask,render_template, request, jsonify, session, url_for,redirect, make_response
 import logging
 import math
-from flask import Flask, g
+from flask import Flask
 from flask_oidc import OpenIDConnect
 from keycloak import KeycloakAuthenticationError, KeycloakOpenID
 from flask_sqlalchemy import SQLAlchemy
@@ -61,7 +60,7 @@ keycloak_admin = KeycloakAdmin(connection=keycloak_connection)
 
 oidc = OpenIDConnect(app)
 
-# Configure client using the python-kcloak library
+# Configure client for end user authentication
 keycloak_openid = KeycloakOpenID(server_url="http://localhost:8080/",
                                  client_id=KEYCLOAK_CLIENT_ID,
                                  realm_name=KEYCLOAK_REALM,
@@ -94,9 +93,9 @@ class Approver(db.Model):
     approver_action = db.Column(db.String(20))
 
 
-RESOURCE_SECRET_KEY =''
+RESOURCE_SECRET_KEY ='' # Holds the secret key for the resource
 
-THRESHOLD = None
+THRESHOLD = None 
 
 '''
 
@@ -387,7 +386,7 @@ def access_requests():
 
 
 
-@app.route('/configurePolicies', methods=['POST','GET'])
+@app.route('/configurePolicies')
 def configure_policies():
     # Retrieve the access duration from the database for the latest approved request ID
 
@@ -395,7 +394,7 @@ def configure_policies():
 
     if latest_access_request:
 
-        access_duration = 0
+        access_duration = 10
 
         for request in latest_access_request:
             access_duration = request.access_duration
@@ -503,6 +502,7 @@ def testApproval():
         return redirect(url_for('revokeToken'))
     
     # Retrieve the secret share for the logged-in approver from the database
+
     approver = Approver.query.filter_by(approverID=user_id).order_by(Approver.id.desc()).first()
 
     #secret_share = approver.approver_secret_share if approver else None
@@ -533,6 +533,9 @@ def approve_request():
 
     return 'Invalid Request'
 
+"""
+managing the state of the latest privileged access request and handling the secret reconstruction when enough approvals are gathered.
+"""
 @app.route('/approval_status', methods=['GET','POST'])
 def approval_status():
 
@@ -552,7 +555,7 @@ def approval_status():
                 message = 'Threshold for Approval Met! Reconstructing key...'
                 #reconstruct the secret key using the threshold value
                 secret_shares = [approver.approver_secret_share for approver in approved_approver_shares]
-                reconstructed_secret = str(PAM.reconstruct_secret_from_base64_shares(secret_shares))[2:-1]
+                reconstructed_secret = str(PAM.reconstruct_secret_from_base64_shares(secret_shares))[2:-1] 
                 latest_request.requestStatus = 'approved'
                 db.session.commit()
                 return jsonify({'reconstructed_secret': reconstructed_secret})

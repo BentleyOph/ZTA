@@ -375,5 +375,124 @@
         "intent": "request_access_decision",
         "user_trust_score": 0.6130000000000001,
         "access_decision": 1
+    },
+    {
+        "ID": 57,
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "intent": "request_access_decision",
+        "user_trust_score": 0.621,
+        "access_decision": 1
+    },
+    {
+        "ID": 58,
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "intent": "request_access_decision",
+        "user_trust_score": 0.609,
+        "access_decision": 0
+    },
+    {
+        "ID": 59,
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "intent": "request_access_decision",
+        "user_trust_score": 0.609,
+        "access_decision": 0
+    },
+    {
+        "ID": 60,
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "intent": "request_access_decision",
+        "user_trust_score": 0.621,
+        "access_decision": 1
+    },
+    {
+        "ID": 61,
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "intent": "request_access_decision",
+        "user_trust_score": 0.621,
+        "access_decision": 1
+    },
+    {
+        "ID": 62,
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "intent": "request_access_decision",
+        "user_trust_score": 0.621,
+        "access_decision": 1
+    },
+    {
+        "ID": 63,
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "intent": "request_access_decision",
+        "user_trust_score": 0.609,
+        "access_decision": 0
+    },
+    {
+        "ID": 64,
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "intent": "request_access_decision",
+        "user_trust_score": 0.609,
+        "access_decision": 0
+    },
+    {
+        "ID": 65,
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "intent": "request_access_decision",
+        "user_trust_score": 0.621,
+        "access_decision": 1
+    },
+    {
+        "ID": 66,
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "intent": "request_access_decision",
+        "user_trust_score": 0.621,
+        "access_decision": 1
+    },
+    {
+        "ID": 67,
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "intent": "request_access_decision",
+        "user_trust_score": 0.621,
+        "access_decision": 1
+    },
+    {
+        "ID": 68,
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "intent": "request_access_decision",
+        "user_trust_score": 0.609,
+        "access_decision": 0
+    },
+    {
+        "ID": 69,
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "intent": "request_access_decision",
+        "user_trust_score": 0.609,
+        "access_decision": 0
+    },
+    {
+        "ID": 70,
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "intent": "request_access_decision",
+        "user_trust_score": 0.621,
+        "access_decision": 1
+    },
+    {
+        "ID": 71,
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "intent": "request_access_decision",
+        "user_trust_score": 0.621,
+        "access_decision": 1
+    },
+    {
+        "ID": 72,
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "intent": "request_access_decision",
+        "user_trust_score": 0.601,
+        "access_decision": 1
+    },
+    {
+        "ID": 73,
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "intent": "request_access_decision",
+        "user_trust_score": 0.601,
+        "access_decision": 1
     }
 ]

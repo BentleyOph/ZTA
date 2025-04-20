@@ -1,27 +1,31 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="{{url_for('static', filename='css/resource-selection.css')}}">
     <title>ZTA - Resource Selection</title>
 </head>
+
 <body>
     <div class="container">
         <h2>ZTA - Resource Selection</h2>
         <p class="access-message">Please select one of the following protected resources:</p>
         <div class="options">
-            <div class="option" id="resource1" role="button" tabindex="0" aria-label="Resource 1" onclick="sendAccessRequest('Resource 1')">
+            <div class="option" id="resource1" role="button" tabindex="0" aria-label="Resource 1"
+                onclick="sendAccessRequest('Resource 1')">
                 <h3>01. Mobile Money Transactions</h3>
                 <p>View Transactions</p>
             </div>
-            <div class="option" role="button" tabindex="0" aria-label="Resource 2" onclick="sendAccessRequest('Resource 2')">
+            <div class="option" role="button" tabindex="0" aria-label="Resource 2"
+                onclick="sendAccessRequest('Resource 2')">
                 <h3>02. System API Keys and Access Tokens</h3>
                 <p>Securely Access System API Keys and Access Tokens for Fintech Services</p>
             </div>
             <!-- Add more resource options as needed -->
         </div>
         <div class="footer">
-            &copy; 
+            &copy;
         </div>
     </div>
 
@@ -44,12 +48,12 @@
                 : 'Desktop';
 
             // Get user details from the page
-            const userId = "{{ user_id }}"; 
+            const userId = "{{ user_id }}";
             const public_ip = "{{ public_ip }}"
             const location = "{{ location }}"
             const device_mac = "{{ device_mac}}"
             const device_vendor = "{{ device_vendor }}"
-            
+
             // Send an access request to the Flask backend
             const data = {
                 userId: userId,
@@ -72,36 +76,37 @@
                 },
                 body: JSON.stringify(data)
             })
-            //Handle the response from the backend
-            .then(response => response.json())
-            .then(data => {
-                // Indicate to the user that the request has been sent and is awaiting verification
-                // Extract the verdict from the response data
+                //Handle the response from the backend
+                .then(response => response.json())
+                .then(data => {
+                    // Indicate to the user that the request has been sent and is awaiting verification
+                    // Extract the verdict from the response data
                     const verdict = data.verdict;
 
                     if (verdict === 0) {
-                    alert("Access Denied!");
-                    window.location.href = '/login';
-                } else if (verdict === 1) {
-                    if (resource === 'Resource 1') {
-                        window.location.href = '/resource-1';
-                    } else if (resource === 'Resource 2') {
-                        window.location.href = '/resource-2';
+                        alert("Access Denied!");
+                        window.location.href = '/login';
+                    } else if (verdict === 1) {
+                        if (resource === 'Resource 1') {
+                            window.location.href = '/resource-1';
+                        } else if (resource === 'Resource 2') {
+                            window.location.href = '/resource-2';
+                        } else {
+                            // Handle other resource options if needed
+                        }
                     } else {
-                        // Handle other resource options if needed
+                        console.log("Unknown verdict received.");
                     }
-                } else {
-                    console.log("Unknown verdict received.");
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                // Re-enable the option in case of an error
-                selectedOption.style.pointerEvents = "auto";
-                selectedOption.style.backgroundColor = "#D1F2C6";
-            });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Re-enable the option in case of an error
+                    selectedOption.style.pointerEvents = "auto";
+                    selectedOption.style.backgroundColor = "#D1F2C6";
+                });
         }
     </script>
 
 </body>
+
 </html>
