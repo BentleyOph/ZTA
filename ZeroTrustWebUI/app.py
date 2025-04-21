@@ -79,9 +79,8 @@ class AccessRequest(db.Model):
     requestor_id = db.Column(db.String(100), nullable=False)
     requestor_username = db.Column(db.String(100), nullable=False)
     time_of_request = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-
     requestStatus = db.Column(db.String(20), default="pending")
-
+    secret_key = db.Column(db.String(128), nullable=True)
 
 # Create a new database model for approvers
 class Approver(db.Model):
@@ -92,8 +91,6 @@ class Approver(db.Model):
     approver_secret_share = db.Column(db.String(750))
     approver_action = db.Column(db.String(20))
 
-
-RESOURCE_SECRET_KEY ='' # Holds the secret key for the resource
 
 THRESHOLD = None 
 
@@ -408,30 +405,23 @@ def configure_policies():
             return render_template('policyConfiguration.html', expiration_time=expiration_time)
 
 @app.route('/privilegedAccess', methods=['GET', 'POST'])
+@oidc.require_login
 def privilegedAccess():
     #dynamically query the keycloak API for the list of approvers to display for the requestor
     client_id = keycloak_admin.get_client_id(KEYCLOAK_CLIENT_ID)
     role_name = "Approver"
     email_addresses = get_client_role_members_emails(keycloak_admin,client_id, role_name)
 
-    num_shares = len(email_addresses) #equal to the number of approvers 
-
-    global THRESHOLD
-
-    THRESHOLD = math.floor(num_shares * 0.8) #define at least 80 % of threshold to be met before secret key reconstruction occurs
-
-    secret_key_identifier = PAM.generate_secret_message(4)
-
-    global RESOURCE_SECRET_KEY
-
-    RESOURCE_SECRET_KEY = PAM.generate_secret_message(45)
-    # Store resource secret in user session to persist across requests
-    session['resource_secret_key'] = RESOURCE_SECRET_KEY
-    
-    secret_shares_list = PAM.generate_secret_shares(THRESHOLD,num_shares,RESOURCE_SECRET_KEY,secret_key_identifier)
-
     if email_addresses is None:
         email_addresses = []
+
+    num_shares = len(email_addresses) #equal to the number of approvers
+
+    global THRESHOLD
+    if num_shares > 0: 
+        THRESHOLD = math.floor(num_shares * 0.8) 
+    else:
+        THRESHOLD = 0 
 
     if request.method == 'POST':
         # Get form data
@@ -447,248 +437,177 @@ def privilegedAccess():
         # Extract selected approvers in a list
         selected_approvers = request.form.getlist('approvers')
 
-        # loop through the approvers and Send emails containing the approval details
-        for index, approver in enumerate(selected_approvers):
-            approver_secret_share = secret_shares_list[index] #obtain the share to send for this approver
-            send_email_to_approver(approver,requestor_id,requestor_username,reason_for_access,access_duration,approver_secret_share)
+        num_selected_shares = len(selected_approvers)
+        if num_selected_shares == 0:
+             return "Please select at least one approver.", 400
 
-        # Validate the access duration (between 1 and 100 minutes)
-        if 1 <= access_duration <= 100:
-            # Create a new access request and add it to the database
+        secret_key = PAM.generate_secret_message(45)
+        secret_key_identifier = PAM.generate_secret_message(4) 
 
-            new_request = AccessRequest(
-                resource_name=resource_name,
-                reason_for_access=reason_for_access,
-                access_duration=access_duration,
-                requestor_id=requestor_id,
-                requestor_username=requestor_username,
-                time_of_request=time_of_request,
-                requestStatus='pending',  # Set the requestStatus to 'pending'
-            )
+        secret_shares_list = PAM.generate_secret_shares(THRESHOLD, num_selected_shares, secret_key, secret_key_identifier)
 
-            db.session.add(new_request)
-            db.session.commit()
-
-             # Insert approver details to the DB (secret share not to be inserted !!!)
-            for index, approver_email in enumerate(selected_approvers):
-                #approver_secret_share = secret_shares_list[index]  # Get the corresponding secret share
-                approver = Approver(
-                    approverID=get_user_id_by_email(keycloak_admin,approver_email),
-                    approverEmail=approver_email,
-                    request_id=new_request.id,
-                    #approver_secret_share=approver_secret_share  # Assign the secret share to each approverID
-                )
-                db.session.add(approver)
-                db.session.commit()
-
-            return redirect(url_for('approval_status'))
-        else:
+        if not (1 <= access_duration <= 100):
             return "Invalid access duration. Please enter a value between 1 and 100 minutes."
+
+        new_request = AccessRequest(
+            resource_name=resource_name,
+            reason_for_access=reason_for_access,
+            access_duration=access_duration,
+            requestor_id=requestor_id,
+            requestor_username=requestor_username,
+            time_of_request=time_of_request,
+            requestStatus='pending',  
+            secret_key=secret_key,    
+        )
+
+        db.session.add(new_request)
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error saving access request: {e}")
+            return "Error processing request.", 500
+
+        for index, approver_email in enumerate(selected_approvers):
+            approver_secret_share = secret_shares_list[index] 
+            send_email_to_approver(approver_email,requestor_id,requestor_username,reason_for_access,access_duration,approver_secret_share)
+
+            approver = Approver(
+                approverID=get_user_id_by_email(keycloak_admin,approver_email),
+                approverEmail=approver_email,
+                request_id=new_request.id,
+                approver_secret_share=approver_secret_share  
+            )
+            db.session.add(approver)
+
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            return "Error processing request.", 500
+
+        return redirect(url_for('approval_status'))
 
     return render_template('privilegedAccessManagement.html',email_addresses=email_addresses)
 
 
-@oidc.require_login
-@app.route('/testing')
-def testApproval():
-    #extract the approver's details 
-    if 'oidc_auth_profile' in session:
-        auth_profile = session['oidc_auth_profile']
-        username = auth_profile.get('name')
-        email = auth_profile.get('email')
-        user_id = auth_profile.get('sub')
-        user_role = extract_user_role(oidc,keycloak_openid)[0]
-
-    #check if the user is part of the approvers group
-    if user_role != "Approver":
-        return redirect(url_for('revokeToken'))
-    
-    # Retrieve the secret share for the logged-in approver from the database
-
-    approver = Approver.query.filter_by(approverID=user_id).order_by(Approver.id.desc()).first()
-
-    #secret_share = approver.approver_secret_share if approver else None
-
-    access_requests = AccessRequest.query.order_by(AccessRequest.id.desc()).limit(1).all()  # Adjust 'limit' as needed
-
-    return render_template('apprPage.html', access_requests=access_requests, username=username, email=email, user_id=user_id, user_role=user_role)
-
-@app.route('/approve_request', methods=['POST'])
-def approve_request():
-    if request.method == 'POST':
-        data = request.json
-
-        # Extract details from the request
-        action = data.get('action')
-        approver_id = data.get('approverId')
-        secret_share = data.get('secretShare') #retrieve the secret share for all the approvers for computation
-
-        # Update the Approver record in the database
-        approver = Approver.query.filter_by(approverID=approver_id).order_by(Approver.id.desc()).first()
-        if approver:
-            approver.approver_action = 'approved' if action == 'approve' else 'rejected'
-            approver.approver_secret_share  = secret_share
-            db.session.commit()
-
-            print("request approved... waiting for processing")
-            return 'Request Approved!'
-
-    return 'Invalid Request'
-
-"""
-managing the state of the latest privileged access request and handling the secret reconstruction when enough approvals are gathered.
-"""
 @app.route('/approval_status', methods=['GET','POST'])
 def approval_status():
     global THRESHOLD
-    #check if there is a POST request
+    latest_request = AccessRequest.query.order_by(AccessRequest.id.desc()).first()
+
+    if not latest_request:
+        return render_template('no_requests.html') 
+
+    latest_request_id = latest_request.id
+    secret_from_db = latest_request.secret_key
+
+    associated_approvers = Approver.query.filter_by(request_id=latest_request_id).all()
+    approvers_count = len(associated_approvers)
+    approved_approvers_records = [appr for appr in associated_approvers if appr.approver_action == 'approved']
+    approved_approvers_count = len(approved_approvers_records)
+
+    if THRESHOLD is None and approvers_count > 0:
+        THRESHOLD = math.floor(approvers_count * 0.8)
+    elif THRESHOLD is None:
+        THRESHOLD = 0 
+
     if request.method == 'POST':
          data = request.json
          action = data.get('action')
-        #get the latest request
-         latest_request = AccessRequest.query.order_by(AccessRequest.id.desc()).first()
-         if latest_request:
-            latest_request_id = latest_request.id
-            approvers_count = Approver.query.filter_by(request_id=latest_request_id).count()
-            approved_approvers = Approver.query.filter_by(request_id=latest_request_id, approver_action='approved').count()
 
-            # initialize THRESHOLD if unset
-            if THRESHOLD is None:
-                THRESHOLD = math.floor(approvers_count * 0.8)
-
-            approved_approver_shares = Approver.query.filter_by(request_id=latest_request_id, approver_action='approved').all()
-            #check if the requests approved meets the minimum threshold
-            if approved_approvers >= THRESHOLD and action == 'reconstruct_secret': # Use >= for flexibility
+         if action == 'reconstruct_secret':
+            if approved_approvers_count >= THRESHOLD:
                 message = 'Threshold for Approval Met! Reconstructing key...'
-                #reconstruct the secret key using the threshold value
-                secret_shares = [approver.approver_secret_share for approver in approved_approver_shares]
-                
+                secret_shares = [approver.approver_secret_share for approver in approved_approvers_records if approver.approver_secret_share] 
+
+                if len(secret_shares) < THRESHOLD:
+                     print("Error: Not enough valid shares found despite meeting approval count.")
+                     return jsonify({'ERR_RECONSTRUCT': 'Could not retrieve enough valid shares.'}), 500
+
                 reconstructed_secret_val = PAM.reconstruct_secret_from_base64_shares(secret_shares)
                 reconstructed_secret_str = None
                 if isinstance(reconstructed_secret_val, bytes):
                     try:
-                        # Attempt to decode assuming UTF-8, adjust if needed
                         reconstructed_secret_str = reconstructed_secret_val.decode('utf-8')
                     except UnicodeDecodeError:
-                        # Handle cases where decoding fails or isn't appropriate
                         print("Warning: Could not decode reconstructed secret bytes to UTF-8.")
-                        # Fallback or specific error handling needed here
-                        reconstructed_secret_str = str(reconstructed_secret_val) # Less ideal fallback
+                        reconstructed_secret_str = str(reconstructed_secret_val)
                 elif isinstance(reconstructed_secret_val, str):
                     reconstructed_secret_str = reconstructed_secret_val
                 else:
                      print(f"Warning: Unexpected type from reconstruction: {type(reconstructed_secret_val)}")
-                     reconstructed_secret_str = str(reconstructed_secret_val) # Fallback
+                     reconstructed_secret_str = str(reconstructed_secret_val)
 
-                # Optional: Add verification print statements
-                print(f"Original Secret (Global): {RESOURCE_SECRET_KEY}")
+                print(f"Secret from DB: {secret_from_db}")
                 print(f"Reconstructed Secret (Decoded): {reconstructed_secret_str}")
 
-                if reconstructed_secret_str == RESOURCE_SECRET_KEY:
+                if reconstructed_secret_str == secret_from_db:
                     latest_request.requestStatus = 'approved'
                     db.session.commit()
-                    return jsonify({'reconstructed_secret': reconstructed_secret_str})
+                    return jsonify({'reconstructed_secret': reconstructed_secret_str, 'message': 'Secret reconstructed successfully.'})
                 else:
-                    # Indicate reconstruction failure or mismatch
-                    print("Error: Reconstructed secret does not match the original.")
+                    print("Error: Reconstructed secret does not match the one stored for this request.")
                     return jsonify({'ERR_RECONSTRUCT': 'Secret reconstruction failed or mismatch.'}), 500
 
-            elif approved_approvers < THRESHOLD and action == 'reconstruct_secret':
-                 return jsonify({'ERR_THRESH': f'Minimum Threshold ({THRESHOLD}) for Secret Key reconstruction Not reached! ({approved_approvers} approved)'})
+            else: 
+                 return jsonify({'ERR_THRESH': f'Minimum Threshold ({THRESHOLD}) for Secret Key reconstruction Not reached! ({approved_approvers_count} approved)'})
+         else:
+             return jsonify({'message': 'Action processed or not applicable.'})
+
+    pending_approvers = approvers_count - approved_approvers_count
+    approval_info = f'{approved_approvers_count}/{approvers_count} approvers approved, {pending_approvers} pending'
+    message = ''
+    reconstructed_secret_str = None 
+
+    APPROVAL_TIME = 10 
+    current_time = datetime.now()
+    expiration_time = latest_request.time_of_request + timedelta(minutes=APPROVAL_TIME) 
+
+    if latest_request.requestStatus == 'approved':
+        message = 'Request already approved.'
+        if approved_approvers_count >= THRESHOLD:
+            secret_shares = [approver.approver_secret_share for approver in approved_approvers_records if approver.approver_secret_share]
+            if len(secret_shares) >= THRESHOLD:
+                reconstructed_secret_val = PAM.reconstruct_secret_from_base64_shares(secret_shares)
+                if isinstance(reconstructed_secret_val, bytes):
+                    try:
+                        reconstructed_secret_str = reconstructed_secret_val.decode('utf-8')
+                    except UnicodeDecodeError:
+                        reconstructed_secret_str = str(reconstructed_secret_val)
+                elif isinstance(reconstructed_secret_val, str):
+                    reconstructed_secret_str = reconstructed_secret_val
+                else:
+                    reconstructed_secret_str = str(reconstructed_secret_val)
+
+                if reconstructed_secret_str != secret_from_db:
+                    print("Warning: Reconstructed secret in approved state doesn't match DB record.")
+                    message = "Request approved, but encountered an issue retrieving the secret."
+                    reconstructed_secret_str = "Error retrieving secret" 
             else:
-                # Handle other actions or invalid states if necessary
-                return jsonify({'message': 'Action processed or not applicable.'})
-
-
-    latest_request = AccessRequest.query.order_by(AccessRequest.id.desc()).first()
-
-    if latest_request:
-        latest_request_id = latest_request.id
-
-        approvers_count = Approver.query.filter_by(request_id=latest_request_id).count()
-        approved_approvers = Approver.query.filter_by(request_id=latest_request_id, approver_action='approved').count()
-        pending_approvers = approvers_count - approved_approvers
-
-        # initialize THRESHOLD if unset
-        if THRESHOLD is None:
-            THRESHOLD = math.floor(approvers_count * 0.8)
-
-        approval_info = f'{approved_approvers}/{approvers_count} approvers approved, {pending_approvers} pending'
-
-        APPROVAL_TIME = 10
-
-        current_time =datetime.now()
-
-        expiration_time = current_time + timedelta(minutes=APPROVAL_TIME)
-
-        reconstructed_secret_str = None # Initialize variable
-
-        # Use threshold for reconstruction, not waiting on every approver
-        if approved_approvers >= THRESHOLD and latest_request.requestStatus != 'approved': # Check status to avoid re-reconstruction
-            message = 'Approvals threshold met. Reconstructing secret...'
-            # Retrieving secret shares for all approved approvers
-            approved_approver_shares = Approver.query.filter_by(request_id=latest_request_id, approver_action='approved').all()
-            secret_shares = [approver.approver_secret_share for approver in approved_approver_shares]
-
-            # Reconstructing the secret key from secret shares
-            reconstructed_secret_val = PAM.reconstruct_secret_from_base64_shares(secret_shares)
-            if isinstance(reconstructed_secret_val, bytes):
-                 try:
-                     reconstructed_secret_str = reconstructed_secret_val.decode('utf-8')
-                 except UnicodeDecodeError:
-                     print("Warning: Could not decode reconstructed secret bytes to UTF-8 in GET.")
-                     reconstructed_secret_str = str(reconstructed_secret_val)
-            elif isinstance(reconstructed_secret_val, str):
-                 reconstructed_secret_str = reconstructed_secret_val
-            else:
-                 print(f"Warning: Unexpected type from reconstruction in GET: {type(reconstructed_secret_val)}")
-                 reconstructed_secret_str = str(reconstructed_secret_val)
-
-            # Optional: Verification
-            print(f"Original Secret (Global - GET): {RESOURCE_SECRET_KEY}")
-            print(f"Reconstructed Secret (Decoded - GET): {reconstructed_secret_str}")
-
-            if reconstructed_secret_str == RESOURCE_SECRET_KEY:
-                latest_request.requestStatus = 'approved'
-                db.session.commit()
-                message = 'All approvers have approved. Secret reconstructed successfully.'
-            else:
-                 print("Error: Reconstructed secret does not match original in GET.")
-                 message = 'All approvers approved, but secret reconstruction failed verification.'
-                 reconstructed_secret_str = None # Don't pass failed reconstruction to template
-
-        elif latest_request.requestStatus == 'approved':
-             message = 'Request already approved.'
-             # Reconstruct the secret again if the status is already approved to display it on refresh
-             approved_approver_shares = Approver.query.filter_by(request_id=latest_request_id, approver_action='approved').all()
-             # Ensure enough shares are available (although status is approved, good practice to check)
-             if len(approved_approver_shares) >= THRESHOLD:
-                 secret_shares = [approver.approver_secret_share for approver in approved_approver_shares]
-                 reconstructed_secret_val = PAM.reconstruct_secret_from_base64_shares(secret_shares)
-                 if isinstance(reconstructed_secret_val, bytes):
-                     try:
-                         reconstructed_secret_str = reconstructed_secret_val.decode('utf-8')
-                     except UnicodeDecodeError:
-                         print("Warning: Could not decode reconstructed secret bytes to UTF-8 in approved state.")
-                         reconstructed_secret_str = str(reconstructed_secret_val)
-                 elif isinstance(reconstructed_secret_val, str):
-                     reconstructed_secret_str = reconstructed_secret_val
-                 else:
-                     print(f"Warning: Unexpected type from reconstruction in approved state: {type(reconstructed_secret_val)}")
-                     reconstructed_secret_str = str(reconstructed_secret_val)
-             else:
-                 # This case should ideally not happen if status is 'approved' based on threshold
                  print("Warning: Request approved but not enough shares found for reconstruction.")
                  message = "Request approved, but could not retrieve necessary shares."
                  reconstructed_secret_str = None
-
         else:
-            message = '' # Default message if still pending
+             print("Warning: Request approved but approval count is below threshold.")
+             message = "Request approved, but inconsistency detected."
+             reconstructed_secret_str = None
 
-        # Pass the string version to the template
-        return render_template('approval_status.html', approval_info=approval_info, message=message, reconstructed_secret=reconstructed_secret_str, threshold=THRESHOLD, expiration_time=expiration_time)
+    elif approved_approvers_count >= THRESHOLD:
+         message = 'Approvals threshold met. Ready for secret reconstruction.'
 
-    return render_template('no_requests.html')  # Render a template if no requests exist
+    else: 
+        message = 'Waiting for more approvers...'
+
+
+    return render_template('approval_status.html',
+                           approval_info=approval_info,
+                           message=message,
+                           reconstructed_secret=reconstructed_secret_str, 
+                           threshold=THRESHOLD,
+                           expiration_time=expiration_time,
+                           request_status=latest_request.requestStatus, 
+                           request_id=latest_request_id) 
 
 
 @app.route('/success', methods = ['GET'])
@@ -699,7 +618,6 @@ def approval_success():
 def process_secret_key():
 
     if request.method == 'POST':
-        # Get the secret key entered by the user
         entered_secret_key = request.form.get('secret_key')
 
         if entered_secret_key:
@@ -717,23 +635,26 @@ def hidden_resource():
     entered_secret_key = request.form.get('secret_key')
 
     print (f"ENTERED SECRET MESSAGE: {entered_secret_key}")
-    #extract the randomized secret key from the PAM endpoint
 
-    secret_message = session.get('resource_secret_key', '')  # retrieve persisted resource secret from session
+    latest_approved_request = AccessRequest.query.filter_by(requestStatus='approved').order_by(AccessRequest.id.desc()).first()
 
-    print(f"SECRET MESSAGE (Global): {secret_message}") # Use the global variable
+    if latest_approved_request and latest_approved_request.secret_key:
+        secret_message = latest_approved_request.secret_key
+        print(f"SECRET MESSAGE from DB (Request ID {latest_approved_request.id}): {secret_message}")
 
-    # Direct string comparison
-    if entered_secret_key == secret_message:
-        return 'Valid'
+        if entered_secret_key == secret_message:
+            return 'Valid'
+        else:
+            print("Comparison failed: Entered key does not match stored key.")
+            return 'Invalid'
     else:
-        return 'Invalid'
+        print("Error: Could not find an approved request with a secret key.")
+        return 'Invalid' 
+
 
 @app.route('/protected_page')
 def protected_page():
-    # Retrieve the access duration from the database for the latest approved request ID
-
-    latest_access_request = AccessRequest.query.order_by(AccessRequest.id.desc()).limit(1).all()  # Adjust 'limit' as needed
+    latest_access_request = AccessRequest.query.order_by(AccessRequest.id.desc()).limit(1).all()  
 
     if latest_access_request:
 
@@ -742,10 +663,8 @@ def protected_page():
         for request in latest_access_request:
             access_duration = request.access_duration
 
-            # Get the current time
             current_time = datetime.now()
             
-            # Calculate the expiration time by adding access duration to the current time
             expiration_time = current_time + timedelta(minutes=access_duration)
 
             return render_template('protectedPage.html', expiration_time=expiration_time)
@@ -763,6 +682,77 @@ def view_access_requests():
     print(requestor_id)
 
     return render_template('viewAccessRequests.html', access_requests=access_requests, approvers = approvers)
+
+@oidc.require_login
+@app.route('/testing')
+def testApproval():
+    #extract the approver's details
+    if 'oidc_auth_profile' in session:
+        auth_profile = session['oidc_auth_profile']
+        username = auth_profile.get('name')
+        email = auth_profile.get('email')
+        user_id = auth_profile.get('sub')
+        user_roles = extract_user_role(oidc,keycloak_openid) # Ensure this function returns a list
+        user_role = user_roles[0] if user_roles else None # Get the first role
+
+    #check if the user is part of the approvers group
+    if user_role != "Approver":
+        # Optionally, you might want to show an error page or just redirect home
+        # return "<h1>Unauthorized: Approver role required.</h1>", 403
+        return redirect(url_for('home')) # Redirecting home might be less confusing than revoking token
+
+    # Retrieve the latest access request to display details
+    # You might want to filter requests relevant to this approver if needed
+    access_requests = AccessRequest.query.order_by(AccessRequest.id.desc()).limit(1).all()
+
+    # Note: The secret share is typically sent via email and entered by the approver on the page,
+    # so we don't necessarily need to fetch it here unless for display/verification purposes.
+
+    return render_template('apprPage.html', access_requests=access_requests, username=username, email=email, user_id=user_id, user_role=user_role)
+
+
+@app.route('/approve_request', methods=['POST'])
+def approve_request():
+    if request.method == 'POST':
+        data = request.json
+
+        # Extract details from the request
+        action = data.get('action')
+        approver_id = data.get('approverId')
+        secret_share = data.get('secretShare') #retrieve the secret share entered by the approver
+
+        # Find the latest request associated with this approver
+        # Assuming one approver might have multiple pending requests, target the latest one
+        # Or, you might need a request_id passed from the frontend to be specific
+        latest_request = AccessRequest.query.order_by(AccessRequest.id.desc()).first()
+        if not latest_request:
+             return jsonify({'error': 'No pending access requests found.'}), 404
+
+        approver = Approver.query.filter_by(approverID=approver_id, request_id=latest_request.id).first()
+
+        if approver:
+            # Only update if the action is 'approve' and a secret share is provided
+            if action == 'approve' and secret_share:
+                 approver.approver_action = 'approved'
+                 # Store the share entered by the approver.
+                 # Ensure this matches the share originally sent. Security consideration: validate share format/origin if possible.
+                 approver.approver_secret_share = secret_share
+                 db.session.commit()
+                 print(f"Approver {approver_id} approved request {approver.request_id} with share.")
+                 return jsonify({'message': 'Request Approved!'}), 200
+            elif action == 'reject': # Handle rejection if needed
+                 approver.approver_action = 'rejected'
+                 db.session.commit()
+                 print(f"Approver {approver_id} rejected request {approver.request_id}.")
+                 return jsonify({'message': 'Request Rejected!'}), 200
+            else:
+                 return jsonify({'error': 'Invalid action or missing secret share for approval.'}), 400
+        else:
+            print(f"Error: Could not find Approver record for ID {approver_id} and Request ID {latest_request.id}")
+            return jsonify({'error': 'Approver record not found for this request.'}), 404
+
+    return jsonify({'error': 'Invalid Request Method'}), 405
+
 
 if __name__ == "__main__":
     with app.app_context():
