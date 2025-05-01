@@ -80,9 +80,9 @@ def calculate_experience_score(created_timestamp):
 
     # Assign scores based on tenure
     if tenure_months >= threshold_2:
-        experience_score = 0.8  # Higher experience score
+        experience_score = 0.6  # Higher experience score
     elif tenure_months >= threshold_1:
-        experience_score = 0.6  # Moderate experience score
+        experience_score = 0.8  # Moderate experience score
     else:
         experience_score = 0.4  # Lower experience score
 
@@ -128,7 +128,7 @@ def calculate_access_request_score(access_request_data, night_start=night_start_
     elif low_risk_locations and location_risk in low_risk_locations:
         location_score = 0.7
     else:
-        location_score = 0.5  # Assign a default score for locations not specified
+        location_score = 0.1  # Assign a default score for locations not specified
 
     # Assess access request time
     access_time = datetime.strptime(access_request_data['access_request_time'], '%Y-%m-%d %H:%M:%S')

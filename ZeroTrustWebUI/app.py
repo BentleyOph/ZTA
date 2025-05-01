@@ -391,8 +391,6 @@ def configure_policies():
 
     if latest_access_request:
 
-        access_duration = 10
-
         for request in latest_access_request:
             access_duration = request.access_duration
 

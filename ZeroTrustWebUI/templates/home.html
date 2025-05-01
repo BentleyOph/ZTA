@@ -17,14 +17,15 @@
         
         <h2>Zero Trust Access and Configuration Page</h2>
         <p class="access-message">Please select one of the following options:</p>
+
         <div class="options">
             <div class="option" id="option1" role="button" tabindex="0" aria-label="Access Protected Resources" onclick="redirectToResourceSelection()">
                 <h3>01. Access Protected Resources</h3>
                 <p>Securely access sensitive data and services based on zero trust principles.</p>
             </div>
-            <div class="option" id="option2" role="button" tabindex="0" aria-label="Configure Security Policies" onclick="redirectToPAM()">
+            <div class="option" id="option2" role="button" tabindex="0" aria-label="Configure Security Policies" onclick="redirectToConfigurePolicies()">
                 <h3>02. Configure Security Policies</h3>
-                <p>Configure contextual security policies for Zero Trust Network Access.</p>
+                <p>Define and manage system security policies.</p>
             </div>
             <div class="option" id="option3" role="button" tabindex="0" aria-label="Monitoring and logging" onclick="redirectToMonitoring()">
                 <h3>03. Monitoring and logging</h3>
@@ -33,6 +34,10 @@
             <div class="option" id="option4" role="button" tabindex="0" aria-label="Approve PAM Requests" onclick="redirectToApprovePAM()">
                 <h3>04. Approve PAM requests</h3>
                 <p>Facilitate Just-in-Time Access By Approving PAM requests.</p>
+            </div>
+            <div class="option" id="option5" role="button" tabindex="0" aria-label="Request Privileged Access" onclick="redirectToPAM()">
+                <h3>05. Request Privileged Access</h3>
+                <p>Request temporary elevated access using Privileged Access Management.</p>
             </div>
         </div>
         <div class="footer">
@@ -68,61 +73,42 @@
 
         //function to disable options based on user role
         function disableOptionsForRole(userRole) {
-            const policyAdminOptions = ['option2']; // IDs of options available to Policy Administrators
-            const securityViewerOptions = ['option3']; // IDs of options available to Security Viewers
-            const pam_option = ['option5']; //IDs of options available for Privileged admins
-            const resource_access = ['option1'];
-            const approver_pam_requests = ['option4']
-            
-            if (userRole === 'Policy Administrator') {
-                // Disable options not available to Policy Administrators
-                securityViewerOptions.forEach(optionId => {
-                    const option = document.getElementById(optionId);
-                    option.style.pointerEvents = 'none';
-                    option.style.opacity = '0.5'; // Grey out the option
-                });
-                approver_pam_requests.forEach(optionId => {
-                    const option = document.getElementById(optionId);
-                    option.style.pointerEvents = 'none';
-                    option.style.opacity = '0.5'; // Grey out the option
-                });
-            } else if (userRole === 'Approver') {
-                // Disable options not available to Security Viewers
-                policyAdminOptions.forEach(optionId => {
-                    const option = document.getElementById(optionId);
-                    option.style.pointerEvents = 'none';
-                    option.style.opacity = '0.5'; // Grey out the option
-                });
-                pam_option.forEach(optionId => {
-                    const option = document.getElementById(optionId);
-                    option.style.pointerEvents = 'none';
-                    option.style.opacity = '0.5'; // Grey out the option
-                });
-                securityViewerOptions.forEach(optionId => {
-                    const option = document.getElementById(optionId);
-                    option.style.pointerEvents = 'none';
-                    option.style.opacity = '0.5'; // Grey out the option
-                });
-            }
-            else if (userRole === 'Security Viewer'){
-                // Disable options not available to Security Viewers
-                policyAdminOptions.forEach(optionId => {
-                    const option = document.getElementById(optionId);
-                    option.style.pointerEvents = 'none';
-                    option.style.opacity = '0.5'; // Grey out the option
-                });
-                resource_access.forEach(optionId => {
-                    const option = document.getElementById(optionId);
-                    option.style.pointerEvents = 'none';
-                    option.style.opacity = '0.5'; // Grey out the option
-                });
+            const allOptions = ['option1', 'option2', 'option3', 'option4', 'option5'];
+            let enabledOptions = [];
 
-                approver_pam_requests.forEach(optionId => {
-                    const option = document.getElementById(optionId);
-                    option.style.pointerEvents = 'none';
-                    option.style.opacity = '0.5'; // Grey out the option
-                });
+            if (userRole === 'Policy Administrator') {
+                enabledOptions = ['option1', 'option2', 'option3', 'option4'] 
+            } else if (userRole === 'Approver') {
+                enabledOptions = ['option4','option3','option1']; // Can only approve PAM requests
+            } else if (userRole === 'Security Viewer'){
+                enabledOptions = ['option3']; // Can only view logs
+            } else {
+                 // Default user (or other roles not explicitly handled)
+                 enabledOptions = ['option1', 'option5']; // Can access resources and request PAM
             }
+
+            allOptions.forEach(optionId => {
+                const option = document.getElementById(optionId);
+                if (option) { // Check if element exists
+                    if (!enabledOptions.includes(optionId)) {
+                        option.style.pointerEvents = 'none';
+                        option.style.opacity = '0.5'; // Grey out the option
+                        option.removeAttribute('onclick'); // Remove click handler
+                        option.removeAttribute('tabindex'); // Remove from tab order
+                        option.setAttribute('aria-disabled', 'true');
+                    } else {
+                        option.style.pointerEvents = 'auto';
+                        option.style.opacity = '1';
+                        option.setAttribute('aria-disabled', 'false');
+                        // Ensure tabindex is set for enabled options if it was removed
+                        if (!option.hasAttribute('tabindex')) {
+                             option.setAttribute('tabindex', '0');
+                        }
+                        // Re-attach onclick if needed (though it might not have been removed if logic is correct)
+                        // This part depends on how you initially set onclick; assuming HTML attribute as shown
+                    }
+                }
+            });
         }
 
         // Call the function when the page loads, passing in the user's role

@@ -1,5 +1,5 @@
 '''
-This file will have the functions related to collecting trust signals, processing them and storing them in json files 
+Functions related to collecting trust signals, processing them and storing them in json files 
 
 '''
 
@@ -10,10 +10,18 @@ HANDLING PROCESSING OF AUTH_DATA
 import json
 import os
 
+
+
 def calculate_sign_in_risk(auth_data):
-    user_dict = {}
-    sign_in_risk = {}
-    user_chain = {}
+    """
+This function calculates the sign-in risk for each user based on their authentication data.
+It uses a Markov Chain approach to predict the next sign-in risk based on the user's previous sign-in risks.
+The function takes a list of authentication data entries, each containing user_id, auth_status, and other relevant information.
+The function returns a dictionary containing the user_id as keys and their corresponding sign-in risk as values.
+"""
+    user_dict = {} # will hold the success and failure counts for each user
+    sign_in_risk = {} # will hold the sign-in risk for each user
+    user_chain = {} # will hold the Markov Chain for each user
 
     # Initialize user_chain for each user_id
     for entry in auth_data:
@@ -48,6 +56,10 @@ def calculate_sign_in_risk(auth_data):
     return user_chain
 
 def predict_sign_in_risk(user_chain, current_sign_in_risk):
+    """
+    This function predicts the next sign-in risk for each user based on the transition probabilities in their Markov Chain.
+    It takes the user_chain and current_sign_in_risk as inputs and returns a dictionary with user_id as keys and predicted sign-in risk as values.
+    """
     # Predict the next sign-in risk based on the transition probabilities
     predicted_sign_in_risk = {}
     
@@ -83,15 +95,16 @@ def process_events(events_data):
 
     # Update auth_data with calculated sign-in risk
     auth_data = cleaned_data[:]
-    user_chain = calculate_sign_in_risk(auth_data)
+    user_chain = calculate_sign_in_risk(auth_data) # returns a dictionary with user_id as keys and their corresponding sign-in risk as values
 
+    # Update sign-in risk for each user in auth_data
     for entry in auth_data:
         user_id = entry['user_id']
         entry['sign_in_risk'] = user_chain[user_id][-1]
 
     # Predict the next sign-in risk
     current_sign_in_risk = {entry['user_id']: entry['sign_in_risk'] for entry in auth_data if entry['user_id'] is not None}
-    predicted_sign_in_risk = predict_sign_in_risk(user_chain, current_sign_in_risk)
+    predicted_sign_in_risk = predict_sign_in_risk(user_chain, current_sign_in_risk) # returns a dictionary with user_id as keys and predicted sign-in risk as values
 
     # Blend the predicted and current sign-in risk
     for entry in auth_data:
@@ -158,6 +171,7 @@ def store_keycloak_events(keycloak_admin):
 
     events_data = keycloak_admin.get_events(query=query_params)
     print(f"Retrieved {len(events_data)} events from Keycloak")
+    print(f'The last 5 events are: {events_data[-5:]}')
     cleaned_data = []
 
     for event in events_data:
@@ -276,3 +290,4 @@ def get_user_identity_data_by_id(user_id, user_data_file):
             return user
 
     return None  # Return None if user_id not found
+
