@@ -20,6 +20,7 @@ from PAM import PAM
 from Keycloak_functions import *
 from PAM_Mail_Notification import send_email,send_email_to_approver
 from trust_signal_collection import store_keycloak_events,load_events_data,process_events
+import time 
 
 sys.path.insert(0,'..')
 
@@ -237,25 +238,61 @@ def get_latest_access_decision():
     return latest_decision
 
 #route to receive an access request and forward it to the AP
+# Initialize Networking Node Globally
+node4 = Networking("127.0.0.1", 8004, 4)
+node4.start()
+node4.connect_with_node('127.0.0.1', 8001) # connect with the access proxy
+node4.connect_with_node('127.0.0.1', 8003) # connect with the policy engine
+
+# Note: A proper shutdown mechanism for node4 might be needed for production environments.
+
+# Function to get the latest access decision data from the JSON file
+def get_latest_access_decision(request_id):
+    latest_decision = None
+    
+    parent_directory = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+    file_path = os.path.join(parent_directory, 'access_decision.json')
+
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, 'r') as file:
+                access_decisions = json.load(file)
+                matching_decisions = [d for d in access_decisions if d.get('request_ID') == request_id]
+                if matching_decisions:
+                    latest_decision = max(matching_decisions, key=lambda x: x.get('timestamp', 0))
+        except json.JSONDecodeError:
+            print(f"Error decoding JSON from {file_path}")
+            return None
+        except Exception as e:
+            print(f"Error reading or processing {file_path}: {e}")
+            return None
+            
+    return latest_decision
+
+#route to receive an access request and forward it to the AP
 @app.route('/receive-access-request', methods = ['POST'])
 def receive_and_process_access_request():
-    #receive the data from the front end when the resource option is clicked. 
     data = request.json
-    #Implement logic for adding the access request in the json file
-    file_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'access_requests.json')
+    access_requests_file_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'access_requests.json')
     existing_data = []
     new_id = 1
 
     try:
-        if os.path.exists(file_path):
-            with open(file_path, 'r') as file:
+        if os.path.exists(access_requests_file_path):
+            with open(access_requests_file_path, 'r') as file:
                 existing_data = json.load(file)
                 if existing_data:
                     last_entry = existing_data[-1]
-                    new_id = last_entry['ID'] + 1
-
+                    if isinstance(last_entry, dict) and 'ID' in last_entry:
+                         new_id = last_entry['ID'] + 1
+                    else:
+                         new_id = len(existing_data) + 1
+                         print(f"Warning: Last entry in access_requests.json is not a dict with 'ID'. Assigning ID: {new_id}")
     except(json.JSONDecodeError, FileNotFoundError) as e:
         print(f"Error occurred while loading JSON data: {e}")
+    except IndexError:
+        print("access_requests.json is empty. Starting with ID 1.")
+        new_id = 1
 
     access_request = {
         'ID': new_id,
@@ -275,31 +312,41 @@ def receive_and_process_access_request():
     existing_data.append(access_request)
 
     try:
-        with open(file_path, 'w') as file:
+        with open(access_requests_file_path, 'w') as file:
             json.dump(existing_data, file, indent=4)
 
     except IOError as e:
-        print(f"Error  occured while loading the json data {e}")
+        print(f"Error occured while writing to the json data {e}")
+        return jsonify({'error': 'Failed to save access request log'}), 500
     
-    #send the access request data to the AP in the peer to peer network of nodes
+    node4.send_message_to_node('1', access_request)
 
-    #first create an instance of the Networking class
-    node4 = Networking("127.0.0.1",8004,4)
-    node4.start()
-    node4.connect_with_node('127.0.0.1',8001) #connect with the access proxy
-    node4.connect_with_node('127.0.0.1',8003) # connect with the policy engine
-    node4.send_message_to_node('1',access_request)  #send access request to access proxy
+    access_decision = None
+    policy_engine_verdict = "pending"
+    max_wait_time = 60
+    poll_interval = 0.5
+    start_time = time.time()
 
-    access_decision = get_latest_access_decision()
-    print(access_decision)
+    print(f"Waiting for access decision for request ID: {new_id}...")
 
-    policy_engine_verdict = access_decision.get('access_decision')
+    while time.time() - start_time < max_wait_time:
+        access_decision = get_latest_access_decision(new_id)
+        # Check if the decision dictionary exists and the 'access_decision' key is present (value can be 0 or 1)
+        if access_decision and access_decision.get('access_decision') is not None:
+            policy_engine_verdict = access_decision.get('access_decision')
+            print(f"Received decision: {policy_engine_verdict}")
+            break
+        else:
+            print(f"Decision not found yet, waiting {poll_interval}s...")
+            time.sleep(poll_interval)
+    
+    # Check the final state after the loop
+    if not access_decision or access_decision.get('access_decision') is None:
+         print(f"Timeout or error waiting for access decision for request ID: {new_id}.")
+         policy_engine_verdict = "timeout" # Keep timeout verdict if no decision was found
 
-    print(f"Policy Engine Verdict: {policy_engine_verdict}")
+    print(f"Final Policy Engine Verdict: {policy_engine_verdict}")
 
-    node4.stop()
-
-    # Communicate to the frontend that the access request has been verified
     response_data = {'verdict': policy_engine_verdict}
     return jsonify(response_data)
 
@@ -755,4 +802,4 @@ def approve_request():
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    app.run(debug=True,use_reloader=False)

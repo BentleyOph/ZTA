@@ -1,9 +1,23 @@
 [
     {
-        "ID": 1,
+        "request_ID": 224,
         "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
-        "intent": "request_access_decision",
-        "user_trust_score": 0.635,
-        "access_decision": 0
+        "user_trust_score": 0.627,
+        "access_decision": 0,
+        "timestamp": 1746316196.9699697
+    },
+    {
+        "request_ID": 225,
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "user_trust_score": 0.627,
+        "access_decision": 0,
+        "timestamp": 1746316219.5074492
+    },
+    {
+        "request_ID": 226,
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "user_trust_score": 0.627,
+        "access_decision": 0,
+        "timestamp": 1746316236.0326242
     }
 ]
