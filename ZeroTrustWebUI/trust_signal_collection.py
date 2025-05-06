@@ -14,13 +14,13 @@ import os
 
 def calculate_sign_in_risk(auth_data):
     """
-This function calculates the sign-in risk for each user based on their authentication data.
-It uses a Markov Chain approach to predict the next sign-in risk based on the user's previous sign-in risks.
+This function calculates the sign-in success ratio for each user based on their authentication data.
+It uses a Markov Chain approach to predict the next success ratio based on the user's previous success ratios.
 The function takes a list of authentication data entries, each containing user_id, auth_status, and other relevant information.
-The function returns a dictionary containing the user_id as keys and their corresponding sign-in risk as values.
+The function returns a dictionary containing the user_id as keys and their corresponding sign-in success ratio history as values.
 """
     user_dict = {} # will hold the success and failure counts for each user
-    sign_in_risk = {} # will hold the sign-in risk for each user
+    sign_in_success_ratio_map = {} # will hold the sign-in success ratio for each user
     user_chain = {} # will hold the Markov Chain for each user
 
     # Initialize user_chain for each user_id
@@ -28,50 +28,56 @@ The function returns a dictionary containing the user_id as keys and their corre
         user_id = entry['user_id']
         user_chain[user_id] = [0]  # Assuming starting sign-in risk
 
-    # Iterate through auth_data to compute sign-in risk for each user_id
+    # Iterate through auth_data to compute sign-in success ratio for each user_id
     for entry in auth_data:
         user_id = entry['user_id']
         auth_status = entry['auth_status']
 
         if user_id not in user_dict:
             user_dict[user_id] = {'success_count': 0, 'failure_count': 0}
-        
+
         # Update success or failure count for each user
         if auth_status == 1:
             user_dict[user_id]['success_count'] += 1
         else:
             user_dict[user_id]['failure_count'] += 1
 
-        # Calculate the sign-in risk based on the success and failure counts
+        # Calculate the sign-in success ratio based on the success and failure counts
         success_count = user_dict[user_id]['success_count']
         failure_count = user_dict[user_id]['failure_count']
         total_count = success_count + failure_count
 
+        current_ratio = 0.0 # Default if no history
         if total_count > 0:
-            sign_in_risk[user_id] = success_count / total_count
+            current_ratio = success_count / total_count
+        
+        sign_in_success_ratio_map[user_id] = current_ratio
 
         # Update Markov Chain for each user
-        user_chain[user_id].append(sign_in_risk[user_id])
+        user_chain[user_id].append(sign_in_success_ratio_map[user_id])
 
-    return user_chain
+    return user_chain # Return the history chain
 
-def predict_sign_in_risk(user_chain, current_sign_in_risk):
+def predict_sign_in_risk(user_chain, current_sign_in_success_ratio_map):
     """
-    This function predicts the next sign-in risk for each user based on the transition probabilities in their Markov Chain.
-    It takes the user_chain and current_sign_in_risk as inputs and returns a dictionary with user_id as keys and predicted sign-in risk as values.
+    This function predicts the next sign-in success ratio for each user based on the transition probabilities in their Markov Chain.
+    It takes the user_chain and current_sign_in_success_ratio_map as inputs and returns a dictionary with user_id as keys and predicted success ratio as values.
     """
-    # Predict the next sign-in risk based on the transition probabilities
-    predicted_sign_in_risk = {}
-    
+    # Predict the next sign-in success ratio based on the transition probabilities
+    predicted_sign_in_success_ratio = {}
+
     for user_id, chain in user_chain.items():
         if len(chain) > 1:
             transition_prob = chain[-1] - chain[-2]  # Difference between last two values
-            if user_id in current_sign_in_risk:
-                predicted_sign_in_risk[user_id] = current_sign_in_risk[user_id] + transition_prob
-            else:
-                predicted_sign_in_risk[user_id] = transition_prob  # Assign transition_prob if user_id not found
+            current_ratio = current_sign_in_success_ratio_map.get(user_id, 0.0) # Get current or default
+            predicted_ratio = current_ratio + transition_prob
+            # Clamp the prediction between 0 and 1
+            predicted_sign_in_success_ratio[user_id] = max(0.0, min(1.0, predicted_ratio))
+        else:
+             predicted_sign_in_success_ratio[user_id] = current_sign_in_success_ratio_map.get(user_id, 0.5) # Use current if no history
 
-    return predicted_sign_in_risk
+
+    return predicted_sign_in_success_ratio
 
 def process_events(events_data):
     cleaned_data = []
@@ -93,24 +99,30 @@ def process_events(events_data):
 
             cleaned_data.append(cleaned_event)
 
-    # Update auth_data with calculated sign-in risk
+    # Update auth_data with calculated sign-in success ratio
     auth_data = cleaned_data[:]
-    user_chain = calculate_sign_in_risk(auth_data) # returns a dictionary with user_id as keys and their corresponding sign-in risk as values
+    user_chain = calculate_sign_in_risk(auth_data) # returns a dictionary with user_id as keys and their corresponding success ratio history
 
-    # Update sign-in risk for each user in auth_data
+    # Update sign-in success ratio for each user in auth_data
     for entry in auth_data:
         user_id = entry['user_id']
-        entry['sign_in_risk'] = user_chain[user_id][-1]
+        if user_id in user_chain and user_chain[user_id]:
+             entry['sign_in_success_ratio'] = user_chain[user_id][-1] # Get the latest calculated ratio
+        else:
+             entry['sign_in_success_ratio'] = 0.5 # Default if no history
 
-    # Predict the next sign-in risk
-    current_sign_in_risk = {entry['user_id']: entry['sign_in_risk'] for entry in auth_data if entry['user_id'] is not None}
-    predicted_sign_in_risk = predict_sign_in_risk(user_chain, current_sign_in_risk) # returns a dictionary with user_id as keys and predicted sign-in risk as values
+    # Predict the next sign-in success ratio
+    current_sign_in_success_ratio_map = {entry['user_id']: entry['sign_in_success_ratio'] for entry in auth_data if entry['user_id'] is not None}
+    predicted_sign_in_success_ratio = predict_sign_in_risk(user_chain, current_sign_in_success_ratio_map) # returns a dictionary with user_id as keys and predicted success ratio as values
 
-    # Blend the predicted and current sign-in risk
+    # Blend the predicted and current sign-in success ratio
     for entry in auth_data:
         user_id = entry['user_id']
-        if user_id in predicted_sign_in_risk:
-            entry['sign_in_risk'] = (entry['sign_in_risk'] + predicted_sign_in_risk[user_id]) / 2
+        if user_id in predicted_sign_in_success_ratio:
+            # Blend current actual ratio with the prediction
+            entry['sign_in_success_ratio'] = (entry['sign_in_success_ratio'] + predicted_sign_in_success_ratio[user_id]) / 2
+            # Ensure blended value is still within 0-1 range
+            entry['sign_in_success_ratio'] = max(0.0, min(1.0, entry['sign_in_success_ratio']))
 
     # File handling to store events in a JSON file
     file_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'auth_data.json')
