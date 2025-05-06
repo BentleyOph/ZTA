@@ -1,8 +1,189 @@
 from datetime import datetime
 import os
-
+import joblib
+from datetime import datetime,timedelta
+import pandas as pd
+import numpy as np
 import yaml
-from .trust_signal_collection import get_latest_access_request, get_latest_auth_data, get_user_identity_data_by_id
+from trust_signal_collection import get_latest_access_request, get_latest_auth_data, get_user_identity_data_by_id
+
+PARENT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+ACCESS_REQUESTS_FILE = os.path.join(PARENT_DIR, 'access_requests.json')
+USER_DATA_FILE = os.path.join(PARENT_DIR, 'user_data.json')
+AUTH_DATA_FILE = os.path.join(PARENT_DIR, 'auth_data.json')
+POLICY_CONFIG_FILE = os.path.join(PARENT_DIR, 'policyConfiguration.yml')
+MODEL_PATH = os.path.join(PARENT_DIR, 'Anomaly_model', 'isolation_forest_model.joblib')
+
+
+#Load the Isolation Forest model
+anomaly_pipeline = None
+try:
+    if os.path.exists(MODEL_PATH):
+        anomaly_pipeline = joblib.load(MODEL_PATH)
+        print("Anomaly detection pipeline loaded successfully.")
+    else:
+        print(f"Warning: Anomaly detection pipeline not found at {MODEL_PATH}")
+except Exception as e:
+    print(f"Error loading anomaly detection pipeline: {e}")
+    anomaly_pipeline = None # Ensure it's None if loading fails
+
+
+_access_requests_df_cache = None
+_access_requests_mtime = 0
+
+def load_historical_access_requests():
+    """Loads historical access requests, using a simple cache based on file modification time."""
+    global _access_requests_df_cache, _access_requests_mtime
+    try:
+        current_mtime = os.path.getmtime(ACCESS_REQUESTS_FILE)
+        if _access_requests_df_cache is None or current_mtime > _access_requests_mtime:
+            print("(Re)Loading historical access requests for anomaly features...")
+            df = pd.read_json(ACCESS_REQUESTS_FILE, orient='records') 
+            df['access_request_time'] = pd.to_datetime(df['access_request_time'])
+            _access_requests_df_cache = df.sort_values(by='access_request_time') # Sort once
+            _access_requests_mtime = current_mtime
+            print("Historical data loaded.")
+        return _access_requests_df_cache.copy() # Return a copy to prevent modification
+    except FileNotFoundError:
+        print(f"Error: Historical access requests file not found at {ACCESS_REQUESTS_FILE}")
+        return pd.DataFrame() # Return empty DataFrame
+    except Exception as e:
+        print(f"Error loading historical access requests: {e}")
+        return pd.DataFrame()
+
+# --- Feature Preparation for Prediction ---
+def prepare_features_for_prediction(current_request_dict):
+    """Prepares a feature DataFrame for a single incoming request."""
+    print("Preparing features for current request...")
+    # Convert single request dict to a DataFrame row
+    df = pd.DataFrame([current_request_dict])
+    df['access_request_time'] = pd.to_datetime(df['access_request_time'])
+
+    # Handle potential missing values (MUST match training)
+    df['location'].fillna('Unknown/Unknown', inplace=True)
+    df['device_OS'].fillna('Unknown', inplace=True)
+    df['device_type'].fillna('Unknown', inplace=True)
+    df['resource_requested'].fillna('Unknown', inplace=True)
+
+    # --- Replicate Feature Engineering ---
+    # 1. Temporal Features
+    df['hour'] = df['access_request_time'].dt.hour
+    df['day_of_week'] = df['access_request_time'].dt.dayofweek
+    df['hour_sin'] = np.sin(2 * np.pi * df['hour'] / 24)
+    df['hour_cos'] = np.cos(2 * np.pi * df['hour'] / 24)
+    df['day_sin'] = np.sin(2 * np.pi * df['day_of_week'] / 7)
+    df['day_cos'] = np.cos(2 * np.pi * df['day_of_week'] / 7)
+
+    # --- Load historical data for lookups ---
+    historical_df = load_historical_access_requests()
+    if historical_df.empty:
+         print("Warning: Cannot calculate historical features due to missing data.")
+         df['time_since_last_req_sec'] = 0
+         df['requests_last_1h'] = 0
+         df['requests_last_24h'] = 0
+    else:
+        user_id = df['user_id'].iloc[0]
+        current_time = df['access_request_time'].iloc[0]
+
+        # Filter historical data for the specific user AND time *before* current request
+        user_history = historical_df[(historical_df['user_id'] == user_id) &
+                                     (historical_df['access_request_time'] < current_time)].copy() # Explicit copy
+
+        # 2. Time Since Last Request
+        if not user_history.empty:
+            last_req_time = user_history['access_request_time'].iloc[-1] # Already sorted
+            time_diff = current_time - last_req_time
+            df['time_since_last_req_sec'] = time_diff.total_seconds()
+        else:
+            df['time_since_last_req_sec'] = 0 # First request for user
+
+        # 3. Frequency Features (use user_history filtered further by time window)
+        one_hour_ago = current_time - timedelta(hours=1)
+        twenty_four_hours_ago = current_time - timedelta(hours=24)
+
+        # Count requests in the last hour (excluding current)
+        reqs_1h = user_history[user_history['access_request_time'] >= one_hour_ago].shape[0]
+        df['requests_last_1h'] = reqs_1h
+
+        # Count requests in the last 24 hours (excluding current)
+        reqs_24h = user_history[user_history['access_request_time'] >= twenty_four_hours_ago].shape[0]
+        df['requests_last_24h'] = reqs_24h
+
+    # 4. Contextual Features
+    df['country'] = df['location'].apply(lambda x: x.split('/')[-1] if isinstance(x, str) and '/' in x else 'Unknown')
+
+    # --- Select final features in the correct order (as used in training preprocessor) ---
+    # Define the order explicitly based on how the preprocessor was trained
+    # It's safer to load this from the saved feature names if possible, but defining here for clarity
+    numerical_features = ['hour_sin', 'hour_cos', 'day_sin', 'day_cos', 'time_since_last_req_sec', 'requests_last_1h', 'requests_last_24h']
+    categorical_features = ['resource_requested', 'country', 'device_OS', 'device_type']
+    feature_columns = numerical_features + categorical_features
+
+    # Ensure all expected columns exist, fill missing numerical with 0, categorical with 'Unknown'
+    for col in feature_columns:
+        if col not in df.columns:
+            print(f"Warning: Feature '{col}' missing in input, adding default value.")
+            # Determine if numeric or categorical based on lists
+            if col in numerical_features:
+                df[col] = 0
+            else:
+                df[col] = 'Unknown'
+
+
+    df_final = df[feature_columns] # Select and order columns
+    print("Feature preparation for prediction complete.")
+    print("Prepared features:\n", df_final.head())
+    return df_final
+
+
+
+def get_anomaly_score(current_features_df):
+    """Calculates the normalized anomaly score using the loaded pipeline."""
+    if anomaly_pipeline is None:
+        print("Anomaly pipeline not loaded. Returning neutral score (0.5).")
+        return 0.5 # Neutral score if model isn't available
+
+    try:
+        # Use the pipeline directly - it handles preprocessing
+        # decision_function returns raw scores: lower=normal, higher=anomaly
+        anomaly_score_raw = anomaly_pipeline.decision_function(current_features_df)
+        raw_score = anomaly_score_raw[0] # Get score for the single row
+        print(f"Raw Anomaly Score: {raw_score}")
+
+        # --- Normalize the score (0=normal, 1=anomaly) ---
+        # !!! IMPORTANT: These min/max values are ESTIMATES based on typical iForest scores.
+        # !!! You MUST observe the range of scores from your *training* data's predictions
+        # !!! (`results_df['anomaly_score'].describe()` from training script) and adjust these bounds.
+        # !!! Or implement a more robust scaling method (e.g., using percentiles).
+        min_expected_score = -0.2  # Typical score for clearly normal points (adjust based on training!)
+        max_expected_score = 0.15  # Typical score for clearly anomalous points (adjust based on training!)
+
+        # Simple linear scaling
+        if max_expected_score <= min_expected_score: # Avoid division by zero
+            normalized_score = 0.5 # Fallback if bounds are invalid
+        else:
+            normalized_score = (raw_score - min_expected_score) / (max_expected_score - min_expected_score)
+
+        # Clamp the score between 0 and 1
+        normalized_score = max(0.0, min(1.0, normalized_score))
+
+        print(f"Normalized Anomaly Score (0=normal, 1=anomaly): {normalized_score}")
+        return normalized_score
+
+    except Exception as e:
+        print(f"Error during anomaly prediction: {e}")
+        return 0.5 # Return neutral score on error
+
+
+
+
+
+
+
+
+
+
+
 
 # Function to calculate User Identity Score
 def calculate_user_identity_score(identity_data):
