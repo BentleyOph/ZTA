@@ -5,7 +5,7 @@ from datetime import datetime,timedelta
 import pandas as pd
 import numpy as np
 import yaml
-from trust_signal_collection import get_latest_access_request, get_latest_auth_data, get_user_identity_data_by_id
+from .trust_signal_collection import get_latest_access_request, get_latest_auth_data, get_user_identity_data_by_id
 
 PARENT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 ACCESS_REQUESTS_FILE = os.path.join(PARENT_DIR, 'access_requests.json')
@@ -60,10 +60,10 @@ def prepare_features_for_prediction(current_request_dict):
     df['access_request_time'] = pd.to_datetime(df['access_request_time'])
 
     # Handle potential missing values (MUST match training)
-    df['location'].fillna('Unknown/Unknown', inplace=True)
-    df['device_OS'].fillna('Unknown', inplace=True)
-    df['device_type'].fillna('Unknown', inplace=True)
-    df['resource_requested'].fillna('Unknown', inplace=True)
+    df['location'] = df['location'].fillna('Unknown/Unknown')
+    df['device_OS'] = df['device_OS'].fillna('Unknown')
+    df['device_type'] = df['device_type'].fillna('Unknown')
+    df['resource_requested'] = df['resource_requested'].fillna('Unknown')
 
     # --- Replicate Feature Engineering ---
     # 1. Temporal Features
@@ -147,6 +147,7 @@ def get_anomaly_score(current_features_df):
         # Use the pipeline directly - it handles preprocessing
         # decision_function returns raw scores: lower=normal, higher=anomaly
         anomaly_score_raw = anomaly_pipeline.decision_function(current_features_df)
+
         raw_score = anomaly_score_raw[0] # Get score for the single row
         print(f"Raw Anomaly Score: {raw_score}")
 
@@ -165,9 +166,11 @@ def get_anomaly_score(current_features_df):
             normalized_score = (raw_score - min_expected_score) / (max_expected_score - min_expected_score)
 
         # Clamp the score between 0 and 1
-        normalized_score = max(0.0, min(1.0, normalized_score))
+        normalized_score = 1 - np.clip(normalized_score, 0, 1) 
 
         print(f"Normalized Anomaly Score (0=normal, 1=anomaly): {normalized_score}")
+        prediction = anomaly_pipeline.predict(current_features_df)
+        print(f"Anomaly Prediction: {prediction[0]}")
         return normalized_score
 
     except Exception as e:
@@ -203,6 +206,9 @@ def calculate_user_identity_score(identity_data):
         user_role_score = 0.7
     else:
         user_role_score = 0.5
+
+
+    
 
     # Assign weights to attributes
     weight_email_verified = 0.4
@@ -402,17 +408,52 @@ def calculate_overall_trust_score(user_id):
     access_request_data = get_latest_access_request(user_id, 'access_requests.json')
     authentication_data = get_latest_auth_data(user_id, 'auth_data.json')
 
+    if not identity_data or not access_request_data or not authentication_data:
+        print("Error: Missing required data for trust calculation. Returning low score.")
+        return 0.1
+    anomaly_score = 0.5 # Default neutral score
+    if anomaly_pipeline:
+        try:
+             # Prepare features for the *current* (latest) access request
+             features_df = prepare_features_for_prediction(access_request_data)
+             anomaly_score = get_anomaly_score(features_df)
+        except Exception as e:
+             print(f"Error during feature prep/anomaly scoring: {e}. Using default anomaly score.")
+             anomaly_score = 0.5 # Use default on error
+    else:
+        print("Anomaly pipeline not loaded, using default anomaly score.")
+
+
+
     # Calculate scores for each segment (these now return dictionaries)
     user_identity_result = calculate_user_identity_score(identity_data)
     access_request_result = calculate_access_request_score(access_request_data)
     authentication_data_result = calculate_authentication_data_score(authentication_data)
     experience_result = calculate_experience_score(identity_data['created_timestamp'])
 
+    
+
     # Extract overall scores for final calculation
     user_identity_score = user_identity_result["overall_score"]
     access_request_score = access_request_result["overall_score"]
     authentication_data_score = authentication_data_result["overall_score"]
     experience_score = experience_result["overall_score"]
+
+    print(f"  Identity Score: {user_identity_score:.3f}")
+    print(f"  Context/Access Score: {access_request_score:.3f}")
+    print(f"  Auth Score: {authentication_data_score:.3f}")
+    print(f"  Experience Score: {experience_score:.3f}")
+    print(f"  Anomaly probability score: {anomaly_score:.3f}")
+
+
+    weight_user_identity = float(policy_configurations.get('userIdentityWeight', 0.3))
+    weight_access_request = float(policy_configurations.get('contextScoreWeight', 0.25))
+    weight_authentication_data = float(policy_configurations.get('authScoreWeight', 0.2))
+    weight_experience = float(policy_configurations.get('expScoreWeight', 0.15)) # Adjusted slightly
+    # *** Add anomalyScoreWeight to your policyConfiguration.yml ***
+    weight_anomaly = float(policy_configurations.get('anomalyScoreWeight', 0.1))
+
+
 
     # Apply different weights to each segment
     weight_user_identity = 0.3
@@ -424,7 +465,8 @@ def calculate_overall_trust_score(user_id):
     overall_trust_score = (user_identity_score * weight_user_identity) + \
                           (access_request_score * weight_access_request) + \
                           (authentication_data_score * weight_authentication_data) + \
-                          (experience_score * weight_experience)
+                          (experience_score * weight_experience) + \
+                            ((1-anomaly_score) * weight_anomaly)
 
     # Compile the detailed results
     detailed_result = {
@@ -433,13 +475,15 @@ def calculate_overall_trust_score(user_id):
             "user_identity": weight_user_identity,
             "access_request": weight_access_request,
             "authentication_data": weight_authentication_data,
-            "experience": weight_experience
+            "experience": weight_experience,
+            "anomaly": weight_anomaly
         },
         "segments": {
             "user_identity": user_identity_result,
             "access_request": access_request_result,
             "authentication_data": authentication_data_result,
-            "experience": experience_result
+            "experience": experience_result,
+            "anomaly_prob": anomaly_score
         }
     }
 

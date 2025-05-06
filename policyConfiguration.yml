@@ -1,6 +1,6 @@
-authScoreWeight: '0.25'
+authScoreWeight: '0.2'
 userIdentityWeight: '0.3'
-contextScoreWeight: '0.2'
+contextScoreWeight: '0.25'
 expScoreWeight: '0.15'
 anomalyScoreWeight: '0.1'
 adminThreshold: '0.6'
