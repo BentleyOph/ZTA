@@ -279,15 +279,15 @@ def calculate_experience_score(created_timestamp):
 
     # Define thresholds for experience (in months)
     threshold_1 = 1
-    threshold_2 = 0.15
+    threshold_2 = 0.15 
 
     # Assign scores based on tenure
     if tenure_months >= threshold_2:
-        experience_score = 0.6  # Higher experience score
+        experience_score = 0.6  
     elif tenure_months >= threshold_1:
-        experience_score = 0.8  # Moderate experience score
+        experience_score = 0.8  
     else:
-        experience_score = 0.4  # Lower experience score
+        experience_score = 0.4  
 
     details = {
         "tenure_months": tenure_months
@@ -299,14 +299,10 @@ def calculate_experience_score(created_timestamp):
 
 
 
-# Get the parent directory path
-parent_directory = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-
-# File path to policyConfiguration.yml
-file_path = 'policyConfiguration.yml'
+#
 
 # Load policyConfiguration.yml file
-with open(file_path, 'r') as file:
+with open(POLICY_CONFIG_FILE, 'r') as file:
     policy_configurations = yaml.safe_load(file)
 
 # Extract country lists for each risk category

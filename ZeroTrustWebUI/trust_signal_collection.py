@@ -12,6 +12,10 @@ import os
 
 
 
+AUTH_DATA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'auth_data.json')
+EVENTS_DATA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'events.json')
+
+
 def calculate_sign_in_risk(auth_data):
     """
 This function calculates the sign-in success ratio for each user based on their authentication data.
@@ -124,8 +128,7 @@ def process_events(events_data):
             # Ensure blended value is still within 0-1 range
             entry['sign_in_success_ratio'] = max(0.0, min(1.0, entry['sign_in_success_ratio']))
 
-    # File handling to store events in a JSON file
-    file_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'auth_data.json')
+    file_path = AUTH_DATA
 
     try:
         existing_data = []
@@ -135,17 +138,50 @@ def process_events(events_data):
             with open(file_path, 'r') as file:
                 existing_data = json.load(file)
                 if existing_data:
+                    # Ensure last_entry is a dictionary and has 'ID'
                     last_entry = existing_data[-1]
-                    new_id = last_entry.get('ID', 0) + 1  # Check if 'ID' exists, otherwise set new_id to 1
+                    if isinstance(last_entry, dict):
+                        new_id = last_entry.get('ID', 0) + 1
+                    else:
+                        # Handle case where last_entry might not be a dict (e.g., corrupted file)
+                        # Or simply count existing entries if ID logic is complex
+                        new_id = len(existing_data) + 1 
+                        print(f"Warning: Last entry in {file_path} is not a dictionary. Recalculating new_id based on length.")
 
-        # Filter out events that already exist in the JSON file
-        auth_data_to_add = [event for event in auth_data if not any(event['user_id'] == entry.get('user_id') for entry in existing_data)]
+
+        # Create a set of (time, user_id) tuples for quick lookup of existing events.
+        # This avoids adding exact duplicate processed events if process_events
+        # is called with data that has already been processed and stored.
+        existing_event_signatures = set()
+        if existing_data:
+            for entry in existing_data:
+                entry_time = entry.get('time')
+                entry_user_id = entry.get('user_id')
+                if entry_time is not None and entry_user_id is not None:
+                    existing_event_signatures.add((entry_time, entry_user_id))
+
+        auth_data_to_add = []
+        # Iterate over the current batch of processed events (auth_data)
+        for event_to_consider in auth_data: # auth_data contains the newly processed events
+            event_time = event_to_consider.get('time')
+            event_user_id = event_to_consider.get('user_id')
+
+            # An event must have time and user_id to be considered for de-duplication
+            if event_time is not None and event_user_id is not None:
+                current_event_signature = (event_time, event_user_id)
+                if current_event_signature not in existing_event_signatures:
+                    auth_data_to_add.append(event_to_consider)
+            else:
+                # If an event lacks time or user_id, it cannot be reliably de-duplicated
+                # by this signature method. Add it, but log a warning.
+                # Consider if such events should be filtered earlier or handled differently.
+                auth_data_to_add.append(event_to_consider)
+                print(f"Warning: Event missing time or user_id, added without de-duplication check: {event_to_consider}")
 
         for i, event in enumerate(auth_data_to_add, start=new_id):
             event['ID'] = i
             existing_data.append(event)
 
-        # Write the updated data to the JSON file
         with open(file_path, 'w') as file:
             json.dump(existing_data, file, indent=4)
 
@@ -204,7 +240,7 @@ def store_keycloak_events(keycloak_admin):
         cleaned_data.append(cleaned_event)
     
     # Use absolute path to events.json in the project root directory
-    file_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'events.json')
+    file_path = EVENTS_DATA
     print(f"Writing events to: {file_path}")
 
     try:

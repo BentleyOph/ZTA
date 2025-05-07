@@ -1,7 +1,7 @@
 import smtplib
 import ssl
 from email.message import EmailMessage
-from email_constants import email_sender,email_password,subject
+from .email_constants import email_sender,email_password,subject
 
 def send_email(email_sender, email_password, email_receiver, subject, body):
     try:

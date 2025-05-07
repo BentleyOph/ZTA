@@ -1538,5 +1538,47 @@
         "device_mac": "00:15:5d:da:a0:fc",
         "device_vendor": "Microsoft Corporation",
         "device_OS": "Win32"
+    },
+    {
+        "ID": 247,
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "intent": "Access Request",
+        "resource_requested": "Resource 1",
+        "access_request_time": "2025-05-07 15:05:25",
+        "public_ip_address": "102.211.213.38",
+        "location": "Nairobi/KE",
+        "device_type": "Desktop",
+        "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+        "device_mac": "00:15:5d:da:a0:fc",
+        "device_vendor": "Microsoft Corporation",
+        "device_OS": "Win32"
+    },
+    {
+        "ID": 248,
+        "user_id": "51d70266-13ed-445d-9d1a-0185b9a35fec",
+        "intent": "Access Request",
+        "resource_requested": "Resource 1",
+        "access_request_time": "2025-05-07 15:13:03",
+        "public_ip_address": "102.211.213.38",
+        "location": "Nairobi/KE",
+        "device_type": "Desktop",
+        "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+        "device_mac": "00:15:5d:da:a0:fc",
+        "device_vendor": "Microsoft Corporation",
+        "device_OS": "Win32"
+    },
+    {
+        "ID": 249,
+        "user_id": "51d70266-13ed-445d-9d1a-0185b9a35fec",
+        "intent": "Access Request",
+        "resource_requested": "Resource 2",
+        "access_request_time": "2025-05-07 15:36:23",
+        "public_ip_address": "102.211.213.38",
+        "location": "Nairobi/KE",
+        "device_type": "Desktop",
+        "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+        "device_mac": "00:15:5d:da:a0:fc",
+        "device_vendor": "Microsoft Corporation",
+        "device_OS": "Win32"
     }
 ]

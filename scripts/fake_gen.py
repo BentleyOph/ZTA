@@ -1,4 +1,3 @@
-# scripts/fake_stream_to_flask.py
 """
 Generate synthetic “Access Request” events that match the on‑disk schema and
 feed them to a Flask ingest endpoint in real time.
@@ -11,10 +10,8 @@ from faker import Faker
 
 fake = Faker()
 
-# ---------------------------------------------------------------------------#
-# 1.  Tunables — edit as needed
-# ---------------------------------------------------------------------------#
-API_URL        = "http://127.0.0.1:5000/simulate_access"
+
+API_URL        = "http://127.0.0.1:5000/simulate_ml"
 EVENTS_PER_SEC = 1.5
 ANOMALY_RATIO  = 0.15
 
@@ -62,7 +59,7 @@ def base_event(user: str) -> dict:
         "intent": "Access Request",
         "resource_requested": random.choice(RESOURCES),
         # Same format as sample: 2025-05-07 02:18:21
-        "access_request_time": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+        "access_request_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "public_ip_address": fake.ipv4_public(),
         "location": "Nairobi/KE",
         "device_type": random.choice(DEVICE_TYPES),
@@ -77,7 +74,7 @@ def mutate_to_anomaly(event: dict) -> dict:
     event = event.copy()
     # Impossible travel: same user, far‑away geo within minutes
     event["access_request_time"] = (
-        datetime.utcnow() + timedelta(hours=10)
+        datetime.now() + timedelta(hours=10)
     ).strftime("%Y-%m-%d %H:%M:%S")
     event["location"] = "Seoul/KR"
     event["public_ip_address"] = fake.ipv4(network=False, private=False)
@@ -109,9 +106,7 @@ def main(rps: float, anomaly_ratio: float):
 
         time.sleep(period)
 
-# ---------------------------------------------------------------------------#
-# 4.  CLI wrapper
-# ---------------------------------------------------------------------------#
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--rps",   type=float, default=EVENTS_PER_SEC,

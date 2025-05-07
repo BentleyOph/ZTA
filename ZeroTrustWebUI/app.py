@@ -15,12 +15,12 @@ from Networking import Networking
 from keycloak import KeycloakAdmin
 from keycloak import KeycloakOpenIDConnection
 import re, uuid
-from keycloak_config import *
-from PAM import PAM
-from Keycloak_functions import *
-from PAM_Mail_Notification import send_email,send_email_to_approver
-from trust_signal_collection import store_keycloak_events,load_events_data,process_events
-from TrustAlgorithm import prepare_features_for_prediction, get_anomaly_score
+from .keycloak_config import *
+from .PAM import PAM
+from .Keycloak_functions import *
+from .PAM_Mail_Notification import send_email,send_email_to_approver
+from .trust_signal_collection import store_keycloak_events,load_events_data,process_events
+from .TrustAlgorithm import prepare_features_for_prediction, get_anomaly_score
 import time 
 
 sys.path.insert(0,'..')
@@ -28,6 +28,9 @@ sys.path.insert(0,'..')
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
+
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+CLIENT_SECRETS_FILE = os.path.join(APP_DIR, 'client_secrets.json')
 
 '''
 This section below contains the configuration of the flask OIDC and the keycloak OIDC
@@ -39,7 +42,7 @@ app.config.update({
     'SECRET_KEY': 'bzf9bctfGor9tB2rOfLdQnK3VNDxt6rx',
     'TESTING': True,
     'DEBUG': True,
-    'OIDC_CLIENT_SECRETS': 'client_secrets.json',
+    'OIDC_CLIENT_SECRETS': CLIENT_SECRETS_FILE,
     'OIDC_ID_TOKEN_COOKIE_SECURE': False,
     'OIDC_USER_INFO_ENABLED': True,
     'OIDC_OPENID_REALM': 'myrealm',
@@ -154,7 +157,7 @@ def home():
                     #storing keycloak events
                     store_keycloak_events(keycloak_admin)
 
-                    parent_directory = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+                    parent_directory = os.path.join(APP_DIR, os.pardir)
 
                     # Define the path to events.json in the parent directory
                     events_file_path = os.path.join(parent_directory, 'events.json')
@@ -169,8 +172,6 @@ def home():
                     all_users = keycloak_admin.get_users()
                     print(all_users)
 
-                    # Define the path to the JSON file
-                    parent_directory = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
                     file_path = os.path.join(parent_directory, 'user_data.json')
 
                     # Extracting user data
@@ -220,23 +221,7 @@ def home():
         return redirect(url_for('index'))
     
 
-# Define the path to the parent directory where the JSON file is stored
-parent_directory = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
 
-# Define the path to the access_decision.json file
-file_path = os.path.join(parent_directory, 'access_decision.json')
-
-# Function to get the latest access decision data from the JSON file
-def get_latest_access_decision():
-    latest_decision = None
-    
-    if os.path.exists(file_path):
-        with open(file_path, 'r') as file:
-            access_decisions = json.load(file)
-            if access_decisions:
-                latest_decision = max(access_decisions, key=lambda x: x['ID'])
-    
-    return latest_decision
 
 #route to receive an access request and forward it to the AP
 # Initialize Networking Node Globally
@@ -247,11 +232,15 @@ node4.connect_with_node('127.0.0.1', 8003) # connect with the policy engine
 
 # Note: A proper shutdown mechanism for node4 might be needed for production environments.
 
+
+
+
 # Function to get the latest access decision data from the JSON file
 def get_latest_access_decision(request_id):
     latest_decision = None
     
-    parent_directory = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+    parent_directory = os.path.join(APP_DIR, os.pardir)
+    
     file_path = os.path.join(parent_directory, 'access_decision.json')
 
     if os.path.exists(file_path):
@@ -274,7 +263,7 @@ def get_latest_access_decision(request_id):
 @app.route('/receive-access-request', methods = ['POST'])
 def receive_and_process_access_request():
     data = request.json
-    access_requests_file_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'access_requests.json')
+    access_requests_file_path = os.path.join(os.path.join(APP_DIR, os.pardir), 'access_requests.json') 
     existing_data = []
     new_id = 1
 
@@ -324,7 +313,7 @@ def receive_and_process_access_request():
 
     access_decision = None
     policy_engine_verdict = "pending"
-    max_wait_time = 60
+    max_wait_time = 120
     poll_interval = 0.5
     start_time = time.time()
 
@@ -372,10 +361,34 @@ def resource_selection():
 
     return render_template('resourceSelection.html',user_id=user_id,location=location,public_ip=ip,device_mac=device_mac,device_vendor=device_vendor)
 
+@app.route('/resource-1')
+def display_transactions():
+    # Load transactions from the JSON file
+    filepath = os.path.join(APP_DIR, 'mobile_money_transactions.json')
+    with open(filepath, 'r') as file:
+        transactions = json.load(file)
+    
+    return render_template('transaction_simulation.html', transactions=transactions)
+
+@app.route('/resource-2')
+def display_tokens():
+    # Load tokens from JSON file
+    file_path = os.path.join(APP_DIR, 'tokens.json')
+    with open(file_path, 'r') as file:
+        tokens = json.load(file)
+    
+    return render_template('Fintech Access Tokens.html', tokens=tokens)
+
+
+
+
+
+
 # Function to create or update policyConfiguration.yml file
 def update_policy_configurations(data):
     # Get the parent directory path
-    parent_directory = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+    parent_directory = os.path.join(APP_DIR, os.pardir)
+
     file_path = os.path.join(parent_directory, 'policyConfiguration.yml')
     
     try:
@@ -404,25 +417,11 @@ def receive_policy_configurations():
     else:
         return 'Invalid request method', 405
 
-@app.route('/resource-1')
-def display_transactions():
-    # Load transactions from the JSON file
-    with open('mobile_money_transactions.json', 'r') as file:
-        transactions = json.load(file)
-    
-    return render_template('transaction_simulation.html', transactions=transactions)
 
-@app.route('/resource-2')
-def display_tokens():
-    # Load tokens from JSON file
-    with open('tokens.json', 'r') as file:
-        tokens = json.load(file)
-    
-    return render_template('Fintech Access Tokens.html', tokens=tokens)
 
 @app.route('/logging')
 def access_requests():
-    file_path = os.path.join(os.path.dirname(os.getcwd()), 'access_requests.json')
+    file_path = os.path.join(APP_DIR, os.pardir, 'access_requests.json')
     
     with open(file_path, 'r') as file:
         access_requests_data = json.load(file)
