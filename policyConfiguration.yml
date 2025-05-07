@@ -10,9 +10,11 @@ signInSuccessRatioThreshold: '0.5'
 highRiskLocations:
 - ''
 lowRiskLocations:
-- ''
+- 'Nairobi/KE'
 mediumRiskLocations:
-- Nairobi/KE
+- 'Mombasa/KE'
+- 'Kisumu/KE'
+
 periodStartInput: 00:00:00
 periodEndInput: 06:00:00
 

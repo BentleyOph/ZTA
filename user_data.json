@@ -15,7 +15,7 @@
         "created_timestamp": 1745181063373,
         "email_verified": false,
         "totp_enabled": false,
-        "user_role": null
+        "user_role": "Policy Administrator"
     },
     {
         "user_id": "51d70266-13ed-445d-9d1a-0185b9a35fec",

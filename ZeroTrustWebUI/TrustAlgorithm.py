@@ -179,9 +179,21 @@ def get_anomaly_score(current_features_df):
 
 
 
+def get_anomaly_prediction(current_features_df):
+    """Calculates the anomaly prediction using the loaded pipeline."""
+    if anomaly_pipeline is None:
+        print("Anomaly pipeline not loaded. Returning neutral prediction (0).")
+        return 0 # Neutral prediction if model isn't available
 
+    try:
+        # Use the pipeline directly - it handles preprocessing
+        prediction = anomaly_pipeline.predict(current_features_df)
+        print(f"Anomaly Prediction: {prediction[0]}")
+        return prediction[0]
 
-
+    except Exception as e:
+        print(f"Error during anomaly prediction: {e}")
+        return 0 # Return neutral prediction on error
 
 
 
@@ -212,8 +224,8 @@ def calculate_user_identity_score(identity_data):
 
     # Assign weights to attributes
     weight_email_verified = 0.4
-    weight_totp_enabled = 0.4
-    weight_user_role = 0.2
+    weight_totp_enabled = 0.2
+    weight_user_role = 0.4
 
     # Calculate weighted score for user identity
     user_identity_score = (email_verified_score * weight_email_verified) + \
@@ -252,8 +264,8 @@ def calculate_authentication_data_score(authentication_data):
         auth_type_score = 0.5
 
     # Assign weights to attributes
-    weight_sign_in_success_ratio = 0.6 # Renamed weight
-    weight_auth_type = 0.4
+    weight_sign_in_success_ratio = 0.9 # Renamed weight
+    weight_auth_type = 0.1
 
     # Calculate weighted score for authentication data
     authentication_data_score = (sign_in_success_ratio_score * weight_sign_in_success_ratio) + \
@@ -364,10 +376,10 @@ def calculate_access_request_score(access_request_data, night_start=night_start_
 
     # Evaluate device_os and device_type
     device_os = access_request_data['device_OS']
-    if 'Linux' in device_os:
-        device_os_score = 0.5
-    else:
+    if 'Win32' in device_os:
         device_os_score = 0.8
+    else:
+        device_os_score = 0.5
 
     device_type = access_request_data['device_type']
     if device_type == 'Mobile':
@@ -376,10 +388,10 @@ def calculate_access_request_score(access_request_data, night_start=night_start_
         device_type_score = 0.8
 
     # Assign weights to attributes
-    weight_location = 0.3
-    weight_access_time = 0.2
-    weight_device_os = 0.25
-    weight_device_type = 0.25
+    weight_location = 0.4
+    weight_access_time = 0.3
+    weight_device_os = 0.2
+    weight_device_type = 0.1
 
     # Calculate weighted score for access request
     access_request_score = (location_score * weight_location) + \
@@ -449,13 +461,6 @@ def calculate_overall_trust_score(user_id):
     # *** Add anomalyScoreWeight to your policyConfiguration.yml ***
     weight_anomaly = float(policy_configurations.get('anomalyScoreWeight', 0.1))
 
-
-
-    # Apply different weights to each segment
-    weight_user_identity = 0.3
-    weight_access_request = 0.2
-    weight_authentication_data = 0.25
-    weight_experience = 0.25
 
     # Calculate overall trust score based on weighted segments
     overall_trust_score = (user_identity_score * weight_user_identity) + \

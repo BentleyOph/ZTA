@@ -20,7 +20,7 @@ from .PAM import PAM
 from .Keycloak_functions import *
 from .PAM_Mail_Notification import send_email,send_email_to_approver
 from .trust_signal_collection import store_keycloak_events,load_events_data,process_events
-from .TrustAlgorithm import prepare_features_for_prediction, get_anomaly_score
+from .TrustAlgorithm import prepare_features_for_prediction, get_anomaly_score,get_anomaly_prediction
 import time 
 
 sys.path.insert(0,'..')
@@ -808,7 +808,11 @@ def simulate():
     data = request.json
     processed = prepare_features_for_prediction(data)
     score = get_anomaly_score(processed)
-    return jsonify({'anomaly_score': score})
+    prediction = get_anomaly_prediction(processed)
+    if hasattr(score, 'item'):
+        prediction = prediction.item()
+    return jsonify({'anomaly_score': score , 'prediction': prediction})
+    
 
 
 
