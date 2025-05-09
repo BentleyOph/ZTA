@@ -1,57 +1,393 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="{{url_for('static', filename='css/home.css')}}">
-    <title>ZTA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZTA Dashboard</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --dark: #1e293b;
+            --light: #f1f5f9;
+            --white: #ffffff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+        
+        .dashboard {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            width: 280px;
+            background: var(--dark);
+            color: var(--white);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100%;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2.5rem;
+        }
+        
+        .logo-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            background-color: var(--primary);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.25rem;
+        }
+        
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        
+        .user-profile {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .user-profile h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .user-profile p {
+            font-size: 0.875rem;
+            opacity: 0.8;
+            margin-bottom: 0.25rem;
+        }
+        
+        .user-role {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+        }
+        
+        .user-id {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-top: 0.5rem;
+        }
+        
+        .logout-btn {
+            margin-top: auto;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--white);
+            border: none;
+            padding: 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .option-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        
+        .option-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .option-card.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+            cursor: not-allowed;
+        }
+        
+        .option-1 { border-left-color: var(--primary); }
+        .option-2 { border-left-color: var(--secondary); }
+        .option-3 { border-left-color: var(--info); }
+        .option-4 { border-left-color: var(--success); }
+        .option-5 { border-left-color: var(--warning); }
+        
+        .option-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            color: white;
+            font-size: 1.25rem;
+        }
+        
+        .option-1 .option-icon { background-color: var(--primary); }
+        .option-2 .option-icon { background-color: var(--secondary); }
+        .option-3 .option-icon { background-color: var(--info); }
+        .option-4 .option-icon { background-color: var(--success); }
+        .option-5 .option-icon { background-color: var(--warning); }
+        
+        .option-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .option-number {
+            font-size: 0.875rem;
+            font-weight: 700;
+            background: #f1f5f9;
+            color: #64748b;
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .option-description {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        
+        .footer {
+            margin-top: 3rem;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.875rem;
+        }
+        
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 240px;
+            }
+            .main-content {
+                margin-left: 240px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: static;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <button class="logout-btn" onclick="logout()">Logout</button>
-        <div class="user-identifiers">
-            <p>Welcome, <span style="font-weight: bold;" id="username">{{ username }}</span></p>
-            <p>Email: <span style="font-style: italic;" id="email">{{ email }}</span></p>
-            <p>Role: <b><span style="color: #FFFDD0;" id="userRole">{{ user_role }}</span></b></p>
-            <p>User ID: <span style="text-decoration: underline;" id="userId">{{ user_id }}</span></p>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">ZT</div>
+                <div class="logo-text">ZTA Dashboard</div>
+            </div>
+            
+            <div class="user-profile">
+                <h3 id="username">{{ username }}</h3>
+                <p id="email">{{ email }}</p>
+                <div class="user-role" id="userRole">{{ user_role }}</div>
+                <div class="user-id" id="userId">ID: {{ user_id }}</div>
+            </div>
+            
+            <button class="logout-btn" onclick="logout()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Logout
+            </button>
         </div>
         
-        <h2>Zero Trust Access and Configuration Page</h2>
-        <p class="access-message">Please select one of the following options:</p>
-
-        <div class="options">
-            <div class="option" id="option1" role="button" tabindex="0" aria-label="Access Protected Resources" onclick="redirectToResourceSelection()">
-                <h3>01. Access Protected Resources</h3>
-                <p>Securely access sensitive data and services based on zero trust principles.</p>
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1 class="page-title">Zero Trust Access and Configuration</h1>
             </div>
-            <div class="option" id="option2" role="button" tabindex="0" aria-label="Configure Security Policies" onclick="redirectToConfigurePolicies()">
-                <h3>02. Configure Security Policies</h3>
-                <p>Define and manage system security policies.</p>
+            
+            <p>Select from the available options below to manage your Zero Trust environment:</p>
+            
+            <div class="options-grid">
+                <!-- Option 1 -->
+                <div class="option-card option-1" id="option1" role="button" tabindex="0" aria-label="Access Protected Resources" onclick="redirectToResourceSelection()">
+                    <div class="option-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                    <div class="option-title">
+                        <span class="option-number">1</span>
+                        Access Protected Resources
+                    </div>
+                    <p class="option-description">Securely access sensitive data and services based on zero trust principles.</p>
+                </div>
+                
+                <!-- Option 2 -->
+                <div class="option-card option-2" id="option2" role="button" tabindex="0" aria-label="Configure Security Policies" onclick="redirectToConfigurePolicies()">
+                    <div class="option-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                        </svg>
+                    </div>
+                    <div class="option-title">
+                        <span class="option-number">2</span>
+                        Configure Security Policies
+                    </div>
+                    <p class="option-description">Define and manage system security policies.</p>
+                </div>
+                
+                <!-- Option 3 -->
+                <div class="option-card option-3" id="option3" role="button" tabindex="0" aria-label="Monitoring and Logging" onclick="redirectToMonitoring()">
+                    <div class="option-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                        </svg>
+                    </div>
+                    <div class="option-title">
+                        <span class="option-number">3</span>
+                        Monitoring and Logging
+                    </div>
+                    <p class="option-description">Get full visibility of system logs and events.</p>
+                </div>
+                
+                <!-- Option 4 -->
+                <div class="option-card option-4" id="option4" role="button" tabindex="0" aria-label="Approve PAM Requests" onclick="redirectToApprovePAM()">
+                    <div class="option-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 11 12 14 22 4"></polyline>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                    </div>
+                    <div class="option-title">
+                        <span class="option-number">4</span>
+                        Approve PAM Requests
+                    </div>
+                    <p class="option-description">Facilitate Just-in-Time Access By Approving PAM requests.</p>
+                </div>
+                
+                <!-- Option 5 -->
+                <div class="option-card option-5" id="option5" role="button" tabindex="0" aria-label="Request Privileged Access" onclick="redirectToPAM()">
+                    <div class="option-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                            <path d="M8 14h.01"></path>
+                            <path d="M12 14h.01"></path>
+                            <path d="M16 14h.01"></path>
+                            <path d="M8 18h.01"></path>
+                            <path d="M12 18h.01"></path>
+                            <path d="M16 18h.01"></path>
+                        </svg>
+                    </div>
+                    <div class="option-title">
+                        <span class="option-number">5</span>
+                        Request Privileged Access
+                    </div>
+                    <p class="option-description">Request temporary elevated access using Privileged Access Management.</p>
+                </div>
             </div>
-            <div class="option" id="option3" role="button" tabindex="0" aria-label="Monitoring and logging" onclick="redirectToMonitoring()">
-                <h3>03. Monitoring and logging</h3>
-                <p>Get full visibility of system logs and events.</p>
+            
+            <div class="footer">
+                &copy; 2025 Zero Trust Access | All Rights Reserved
             </div>
-            <div class="option" id="option4" role="button" tabindex="0" aria-label="Approve PAM Requests" onclick="redirectToApprovePAM()">
-                <h3>04. Approve PAM requests</h3>
-                <p>Facilitate Just-in-Time Access By Approving PAM requests.</p>
-            </div>
-            <div class="option" id="option5" role="button" tabindex="0" aria-label="Request Privileged Access" onclick="redirectToPAM()">
-                <h3>05. Request Privileged Access</h3>
-                <p>Request temporary elevated access using Privileged Access Management.</p>
-            </div>
-        </div>
-        <div class="footer">
-            &copy; ZTA
         </div>
     </div>
+    
     <script>
         function redirectToResourceSelection() {
-            // Redirect to the ResourceSelection.html page
             window.location.href = 'resource-selection';
         }
 
         function logout() {
-            // Redirect to the /revokeToken route for logout
             window.location.href = '/revokeToken';
         }
 
@@ -71,7 +407,6 @@
             window.location.href = '/testing'
         }
 
-        //function to disable options based on user role
         function disableOptionsForRole(userRole) {
             const allOptions = ['option1', 'option2', 'option3', 'option4', 'option5'];
             let enabledOptions = [];
@@ -79,44 +414,38 @@
             if (userRole === 'Policy Administrator') {
                 enabledOptions = ['option1', 'option2', 'option3', 'option4'] 
             } else if (userRole === 'Approver') {
-                enabledOptions = ['option4','option3','option1']; // Can only approve PAM requests
+                enabledOptions = ['option4','option3','option1']; 
             } else if (userRole === 'Security Viewer'){
-                enabledOptions = ['option3']; // Can only view logs
+                enabledOptions = ['option3','option5']; 
             } else {
-                 // Default user (or other roles not explicitly handled)
-                 enabledOptions = ['option1', 'option5']; // Can access resources and request PAM
+                enabledOptions = ['option1', 'option5']; 
             }
 
             allOptions.forEach(optionId => {
                 const option = document.getElementById(optionId);
-                if (option) { // Check if element exists
+                if (option) {
                     if (!enabledOptions.includes(optionId)) {
+                        option.classList.add('disabled');
                         option.style.pointerEvents = 'none';
-                        option.style.opacity = '0.5'; // Grey out the option
-                        option.removeAttribute('onclick'); // Remove click handler
-                        option.removeAttribute('tabindex'); // Remove from tab order
+                        option.removeAttribute('onclick');
+                        option.removeAttribute('tabindex');
                         option.setAttribute('aria-disabled', 'true');
                     } else {
+                        option.classList.remove('disabled');
                         option.style.pointerEvents = 'auto';
-                        option.style.opacity = '1';
                         option.setAttribute('aria-disabled', 'false');
-                        // Ensure tabindex is set for enabled options if it was removed
                         if (!option.hasAttribute('tabindex')) {
-                             option.setAttribute('tabindex', '0');
+                            option.setAttribute('tabindex', '0');
                         }
-                        // Re-attach onclick if needed (though it might not have been removed if logic is correct)
-                        // This part depends on how you initially set onclick; assuming HTML attribute as shown
                     }
                 }
             });
         }
 
-        // Call the function when the page loads, passing in the user's role
         document.addEventListener('DOMContentLoaded', function () {
-            const userRole = "{{ user_role }}"; // Fetch the user's role from the template variable
+            const userRole = "{{ user_role }}";
             disableOptionsForRole(userRole);
         });
-
     </script>
 </body>
 </html>

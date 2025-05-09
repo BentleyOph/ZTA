@@ -1188,5 +1188,225 @@
         "auth_status": 1,
         "sign_in_success_ratio": 0.75,
         "ID": 119
+    },
+    {
+        "time": 1746780471837,
+        "type": "LOGIN",
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.9518292682926829,
+        "ID": 120
+    },
+    {
+        "time": 1746781408629,
+        "type": "LOGIN",
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.9529616724738675,
+        "ID": 121
+    },
+    {
+        "time": 1746783203208,
+        "type": "LOGIN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.9579093432007402,
+        "ID": 122
+    },
+    {
+        "time": 1746783247374,
+        "type": "LOGIN",
+        "user_id": "51d70266-13ed-445d-9d1a-0185b9a35fec",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 1.0,
+        "ID": 123
+    },
+    {
+        "time": 1746783340158,
+        "type": "LOGIN",
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.9540420819490587,
+        "ID": 124
+    },
+    {
+        "time": 1746784721847,
+        "type": "LOGIN",
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.778846153846154,
+        "ID": 125
+    },
+    {
+        "time": 1746785846320,
+        "type": "LOGIN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.9587765957446809,
+        "ID": 126
+    },
+    {
+        "time": 1746787192891,
+        "type": "LOGIN",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 1.0,
+        "ID": 127
+    },
+    {
+        "time": 1746798716685,
+        "type": "LOGIN",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 1.0,
+        "ID": 128
+    },
+    {
+        "time": 1746799930223,
+        "type": "LOGIN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.9596088435374148,
+        "ID": 129
+    },
+    {
+        "time": 1746800523931,
+        "type": "LOGIN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.9604081632653061,
+        "ID": 130
+    },
+    {
+        "time": 1746801777755,
+        "type": "LOGIN",
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.7939560439560439,
+        "ID": 131
+    },
+    {
+        "time": 1746801813677,
+        "type": "LOGIN",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 1.0,
+        "ID": 132
+    },
+    {
+        "time": 1746801906427,
+        "type": "LOGIN",
+        "user_id": "51d70266-13ed-445d-9d1a-0185b9a35fec",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 1.0,
+        "ID": 133
+    },
+    {
+        "time": 1746802099524,
+        "type": "LOGIN",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 1.0,
+        "ID": 134
+    },
+    {
+        "time": 1746802405380,
+        "type": "LOGIN",
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.8071428571428572,
+        "ID": 135
+    },
+    {
+        "time": 1746802861347,
+        "type": "LOGIN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.9611764705882353,
+        "ID": 136
+    },
+    {
+        "time": 1746802875465,
+        "type": "LOGIN",
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.81875,
+        "ID": 137
+    },
+    {
+        "time": 1746802913741,
+        "type": "LOGIN",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.75,
+        "ID": 138
+    },
+    {
+        "time": 1746802911370,
+        "type": "LOGIN_ERROR",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 0,
+        "sign_in_success_ratio": 0.75,
+        "ID": 139
+    },
+    {
+        "time": 1746802922734,
+        "type": "LOGIN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.9619155354449472,
+        "ID": 140
+    },
+    {
+        "time": 1746803559772,
+        "type": "LOGIN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.9626269956458635,
+        "ID": 141
     }
 ]

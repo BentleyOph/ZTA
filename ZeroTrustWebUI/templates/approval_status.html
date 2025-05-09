@@ -1,118 +1,542 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="{{url_for('static', filename='css/approval-status.css')}}">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PAM Request Status</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --dark: #1e293b;
+            --light: #f1f5f9;
+            --white: #ffffff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+        
+        .dashboard {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            width: 280px;
+            background: var(--dark);
+            color: var(--white);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100%;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2.5rem;
+        }
+        
+        .logo-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            background-color: var(--primary);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.25rem;
+        }
+        
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        
+        .user-profile {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .user-profile h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .user-profile p {
+            font-size: 0.875rem;
+            opacity: 0.8;
+            margin-bottom: 0.25rem;
+        }
+        
+        .user-role {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+        }
+        
+        .user-id {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-top: 0.5rem;
+        }
+        
+        .logout-btn {
+            margin-top: auto;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--white);
+            border: none;
+            padding: 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .card-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .approval-info {
+            background: var(--light);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .approval-info p {
+            font-size: 1rem;
+            color: var(--dark);
+        }
+        
+        .timer-card {
+            border-left: 4px solid var(--warning);
+        }
+        
+        .timer-card .card-icon {
+            background-color: var(--warning);
+        }
+        
+        .status-card {
+            border-left: 4px solid var(--primary);
+        }
+        
+        .status-card .card-icon {
+            background-color: var(--primary);
+        }
+        
+        .secret-card {
+            border-left: 4px solid var(--success);
+        }
+        
+        .secret-card .card-icon {
+            background-color: var(--success);
+        }
+        
+        .remaining-time {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin: 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .message {
+            margin: 1rem 0;
+            padding: 1rem;
+            background-color: #f8fafc;
+            border-radius: 8px;
+            border-left: 4px solid var(--info);
+        }
+        
+        .message p {
+            color: var(--dark);
+        }
+        
+        .secret-display {
+            background-color: var(--light);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            overflow-wrap: break-word;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        
+        .view-resource-btn {
+            background-color: var(--success);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .view-resource-btn:hover {
+            background-color: #0ca678;
+            transform: translateY(-1px);
+        }
+        
+        .footer {
+            margin-top: 3rem;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.875rem;
+        }
+        
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 240px;
+            }
+            .main-content {
+                margin-left: 240px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: static;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>PAM Request Status</h1>
-
-        <div class="approval-info">
-            <p>{{ approval_info }}</p>
-        </div>
-
-        <div class="approval-info">
-            <p>At least {{ threshold }} approvers(80%) needed to reconstruct the secret key.</p>
-        </div>
-
-        <div class="remaining-time" id="remainingTime">Time Left: </div>
-
-        <div class="message">
-            <p id = "message">{{ message }}</p>
-        </div>
-
-        <!-- Heading for reconstructed secret key -->
-        <h2>Reconstructed Secret Key</h2>
-        
-
-        {% if reconstructed_secret %}
-          <div class="secret-display">
-            <code>{{ reconstructed_secret }}</code>
-          </div>
-        {% endif %}
-          
-        <!-- Button to view protected resource -->
-        <button class="view-resource-btn" onclick="viewProtectedResource()">View Protected Resource</button>
-
-        <script>
-            function viewProtectedResource() {
-                window.location.href = "/enterSecretKey";
-            }
-
-            function updateRemainingTime() {
-                var currentTime = new Date();
-                var expirationTime = localStorage.getItem("expirationTime");
-
-                if (!expirationTime) {
-                    expirationTime = new Date('{{ expiration_time }}');
-                    localStorage.setItem("expirationTime", expirationTime); // Store expiration time in local storage
-                } else {
-                    expirationTime = new Date(expirationTime);
-                }
-
-                var timeDiff = expirationTime.getTime() - currentTime.getTime();
-                var totalSeconds = Math.floor(timeDiff / 1000);
-                var remainingTimeElement = document.getElementById('remainingTime');
-
-                if (totalSeconds <= 0) {
-                    remainingTimeElement.textContent = "Time remaining: 0 minutes 0 seconds";
-                    reconstructSecret();
-                    localStorage.removeItem("expirationTime");
-                    clearInterval(refreshInterval); // Stop refreshing the page
-                } else {
-                    var minutes = Math.floor(totalSeconds / 60);
-                    var seconds = totalSeconds % 60;
-                    remainingTimeElement.textContent = "Time remaining: " + minutes + " minutes " + seconds + " seconds";
-                }
-            }
-
-            function reconstructSecret() {
-                fetch('/approval_status', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ action: 'reconstruct_secret' }),
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.hasOwnProperty('ERR_THRESH')) {
-                        document.getElementById('message').innerHTML = 'Approval Threshold not reached!';
-                    }
-                    else{
-                        if(data.hasOwnProperty('reconstructed_secret')){
-                            document.getElementById('reconstructedSecretKey').value = data.reconstructed_secret;
-                            document.getElementById('message').innerHTML = 'Secret Key reconstructed using the Approval threshold!';
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    // Handle any errors here
-                });
-            }
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">ZT</div>
+                <div class="logo-text">ZTA Dashboard</div>
+            </div>
             
-            var counter =0; 
-            // Call the function to initiate the countdown
-            var refreshInterval = setInterval(function() {
-                updateRemainingTime();
-                counter ++;
-                if (counter ==5)
-                {
-                    counter =0;
-                    location.reload();
-                }
-            }, 1000); // Refresh every second
-        </script>
+            <div class="user-profile">
+                <h3 id="username">{{ username }}</h3>
+                <p id="email">{{ email }}</p>
+                <div class="user-role" id="userRole">{{ user_role }}</div>
+                <div class="user-id" id="userId">ID: {{ user_id }}</div>
+            </div>
+            
+            <button class="logout-btn" onclick="logout()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Logout
+            </button>
+        </div>
         
+        <!-- Main Content -->
+        <div class="main-content">
+            <a href="/" class="back-link">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Back to Dashboard
+            </a>
+            
+            <div class="header">
+                <h1 class="page-title">PAM Request Status</h1>
+            </div>
+            
+            <!-- Status Information Card -->
+            <div class="card status-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                        </div>
+                        Request Status
+                    </div>
+                </div>
+                
+                <div class="approval-info">
+                    <p>{{ approval_info }}</p>
+                </div>
+                
+                <div class="approval-info">
+                    <p>At least {{ threshold }} approvers (80%) needed to reconstruct the secret key.</p>
+                </div>
+                
+                <div class="message">
+                    <p id="message">{{ message }}</p>
+                </div>
+            </div>
+            
+            <!-- Timer Card -->
+            <div class="card timer-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                        Time Remaining
+                    </div>
+                </div>
+                
+                <div class="remaining-time" id="remainingTime">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    Time Left: Calculating...
+                </div>
+            </div>
+            
+            <!-- Secret Key Card -->
+            <div class="card secret-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+                            </svg>
+                        </div>
+                        Reconstructed Secret Key
+                    </div>
+                </div>
+                
+                {% if reconstructed_secret %}
+                <div class="secret-display">
+                    <code id="reconstructedSecretDisplay">{{ reconstructed_secret }}</code>
+                </div>
+                {% else %}
+                <div class="secret-display">
+                    <code id="reconstructedSecretDisplay">Waiting for sufficient approvals to reconstruct the secret key...</code>
+                </div>
+                {% endif %}
+                
+                <button class="view-resource-btn" onclick="viewProtectedResource()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    View Protected Resource
+                </button>
+            </div>
+            
+            <div class="footer">
+                &copy; 2025 Zero Trust Access | All Rights Reserved
+            </div>
+        </div>
     </div>
+    
+    <script>
+        function viewProtectedResource() {
+            window.location.href = "/enterSecretKey";
+        }
+
+        function logout() {
+            window.location.href = '/revokeToken';
+        }
+
+        function updateRemainingTime() {
+            var currentTime = new Date();
+            var expirationTimeISO = localStorage.getItem("expirationTimeISO");
+            var expirationTimeObj;
+
+            if (!expirationTimeISO) {
+                // '{{ expiration_time }}' is now an ISO string from Flask
+                expirationTimeISO = '{{ expiration_time }}'; 
+                expirationTimeObj = new Date(expirationTimeISO);
+                // Store the ISO string in localStorage
+                localStorage.setItem("expirationTimeISO", expirationTimeISO); 
+            } else {
+                expirationTimeObj = new Date(expirationTimeISO);
+            }
+
+            var timeDiff = expirationTimeObj.getTime() - currentTime.getTime();
+            var totalSeconds = Math.floor(timeDiff / 1000);
+            var remainingTimeElement = document.getElementById('remainingTime');
+
+            if (totalSeconds <= 0) {
+                remainingTimeElement.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    Time remaining: 0 minutes 0 seconds
+                `;
+                reconstructSecret();
+                localStorage.removeItem("expirationTimeISO"); // Use the correct key
+                clearInterval(refreshInterval); // Stop refreshing the page
+            } else {
+                var minutes = Math.floor(totalSeconds / 60);
+                var seconds = totalSeconds % 60;
+                remainingTimeElement.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    Time remaining: ${minutes} minutes ${seconds} seconds
+                `;
+            }
+        }
+
+        function reconstructSecret() {
+            fetch('/approval_status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ action: 'reconstruct_secret' }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.hasOwnProperty('ERR_THRESH')) {
+                    document.getElementById('message').innerHTML = 'Approval Threshold not reached!';
+                }
+                else{
+                    if(data.hasOwnProperty('reconstructed_secret')){
+                        document.getElementById('reconstructedSecretDisplay').textContent = data.reconstructed_secret;
+                        document.getElementById('message').innerHTML = 'Secret Key reconstructed using the Approval threshold!';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Handle any errors here
+            });
+        }
+        
+        var counter = 0; 
+        // Call the function to initiate the countdown
+        var refreshInterval = setInterval(function() {
+            updateRemainingTime();
+            counter++;
+            if (counter == 5) {
+                counter = 0;
+                location.reload();
+            }
+        }, 1000); // Refresh every second
+    </script>
 </body>
 </html>

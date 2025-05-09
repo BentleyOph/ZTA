@@ -43,5 +43,14 @@
         "email_verified": true,
         "totp_enabled": false,
         "user_role": "Approver"
+    },
+    {
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "username": "viwer",
+        "email": "viwer@gmail.com",
+        "created_timestamp": 1746787053417,
+        "email_verified": true,
+        "totp_enabled": false,
+        "user_role": "Security Viewer"
     }
 ]

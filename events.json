@@ -2878,5 +2878,605 @@
         "token_id": null,
         "session_id": "8f0ef22d-f0c6-492a-9e59-7606b7d3c0d2",
         "ID": 288
+    },
+    {
+        "time": 1746780472265,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "83f4e3e7-0338-4a3c-b6a4-1742a12e9304",
+        "session_id": "11c5ef6f-ae70-470b-80d9-240d98697e8f",
+        "ID": 289
+    },
+    {
+        "time": 1746780471837,
+        "type": "LOGIN",
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "11c5ef6f-ae70-470b-80d9-240d98697e8f",
+        "ID": 290
+    },
+    {
+        "time": 1746781408955,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "2cbbffc4-8c77-47f3-b095-fcbeaebc0fe9",
+        "session_id": "6c00b999-a8bd-4815-92b1-9a0f5ca2cd9f",
+        "ID": 291
+    },
+    {
+        "time": 1746781408629,
+        "type": "LOGIN",
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "6c00b999-a8bd-4815-92b1-9a0f5ca2cd9f",
+        "ID": 292
+    },
+    {
+        "time": 1746781400726,
+        "type": "LOGOUT",
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": null,
+        "session_id": "11c5ef6f-ae70-470b-80d9-240d98697e8f",
+        "ID": 293
+    },
+    {
+        "time": 1746783203250,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "4f4b0085-bcdc-4540-847f-c188fa4e02a9",
+        "session_id": "c286f9ce-cba5-4d22-97c1-1a13c0fd3446",
+        "ID": 294
+    },
+    {
+        "time": 1746783203208,
+        "type": "LOGIN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "c286f9ce-cba5-4d22-97c1-1a13c0fd3446",
+        "ID": 295
+    },
+    {
+        "time": 1746782831490,
+        "type": "LOGOUT",
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": null,
+        "session_id": "6c00b999-a8bd-4815-92b1-9a0f5ca2cd9f",
+        "ID": 296
+    },
+    {
+        "time": 1746783247403,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "51d70266-13ed-445d-9d1a-0185b9a35fec",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "66b0805e-66e1-4577-80c2-1c4f2dabc7bc",
+        "session_id": "13972bb7-19af-4c0b-9ca7-394b875d720f",
+        "ID": 297
+    },
+    {
+        "time": 1746783247374,
+        "type": "LOGIN",
+        "user_id": "51d70266-13ed-445d-9d1a-0185b9a35fec",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "13972bb7-19af-4c0b-9ca7-394b875d720f",
+        "ID": 298
+    },
+    {
+        "time": 1746783206563,
+        "type": "LOGOUT",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": null,
+        "session_id": "c286f9ce-cba5-4d22-97c1-1a13c0fd3446",
+        "ID": 299
+    },
+    {
+        "time": 1746783340468,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "0dba1825-fd38-4947-be0b-ae017b1462d3",
+        "session_id": "a09f4aa0-2bdd-44e4-bdf0-82a42aaa7371",
+        "ID": 300
+    },
+    {
+        "time": 1746783340158,
+        "type": "LOGIN",
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "a09f4aa0-2bdd-44e4-bdf0-82a42aaa7371",
+        "ID": 301
+    },
+    {
+        "time": 1746783332602,
+        "type": "LOGOUT",
+        "user_id": "51d70266-13ed-445d-9d1a-0185b9a35fec",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": null,
+        "session_id": "13972bb7-19af-4c0b-9ca7-394b875d720f",
+        "ID": 302
+    },
+    {
+        "time": 1746784721873,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "9ad6cad6-46e3-457c-86b2-253a82bbb7ed",
+        "session_id": "2678961d-a212-45b4-8803-352b2c587709",
+        "ID": 303
+    },
+    {
+        "time": 1746784721847,
+        "type": "LOGIN",
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "2678961d-a212-45b4-8803-352b2c587709",
+        "ID": 304
+    },
+    {
+        "time": 1746784288541,
+        "type": "LOGOUT",
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": null,
+        "session_id": "a09f4aa0-2bdd-44e4-bdf0-82a42aaa7371",
+        "ID": 305
+    },
+    {
+        "time": 1746785846619,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "0ef8ada2-d9cf-471f-80f6-46482923fbbc",
+        "session_id": "c05eae49-b8aa-49a1-99e5-e64abbe63bbb",
+        "ID": 306
+    },
+    {
+        "time": 1746785846320,
+        "type": "LOGIN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "c05eae49-b8aa-49a1-99e5-e64abbe63bbb",
+        "ID": 307
+    },
+    {
+        "time": 1746785803006,
+        "type": "LOGOUT",
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": null,
+        "session_id": "2678961d-a212-45b4-8803-352b2c587709",
+        "ID": 308
+    },
+    {
+        "time": 1746787193194,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "745b3c52-e4bb-4d49-acfc-d0d576cdabfd",
+        "session_id": "385f29b7-4787-48cd-a47c-e4de8ea51dc8",
+        "ID": 309
+    },
+    {
+        "time": 1746787192891,
+        "type": "LOGIN",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "385f29b7-4787-48cd-a47c-e4de8ea51dc8",
+        "ID": 310
+    },
+    {
+        "time": 1746787185370,
+        "type": "LOGOUT",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": null,
+        "session_id": "c05eae49-b8aa-49a1-99e5-e64abbe63bbb",
+        "ID": 311
+    },
+    {
+        "time": 1746798717003,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "ce3ce184-adbb-44a9-9855-32e11201180d",
+        "session_id": "140ace7f-c049-4485-b1d5-b341807ae5b2",
+        "ID": 312
+    },
+    {
+        "time": 1746798716685,
+        "type": "LOGIN",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "140ace7f-c049-4485-b1d5-b341807ae5b2",
+        "ID": 313
+    },
+    {
+        "time": 1746799930528,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "d333b93e-5465-430e-ae9d-fd35af960889",
+        "session_id": "b0aae5c0-53bd-46ce-b4c2-89a0b242ae4d",
+        "ID": 314
+    },
+    {
+        "time": 1746799930223,
+        "type": "LOGIN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "b0aae5c0-53bd-46ce-b4c2-89a0b242ae4d",
+        "ID": 315
+    },
+    {
+        "time": 1746799922743,
+        "type": "LOGOUT",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": null,
+        "session_id": "140ace7f-c049-4485-b1d5-b341807ae5b2",
+        "ID": 316
+    },
+    {
+        "time": 1746800523956,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "5ff9d1fb-637a-41e7-806b-109a439bd8a1",
+        "session_id": "2e8b8bbd-6be5-4c4f-9321-f4f71dd2b79d",
+        "ID": 317
+    },
+    {
+        "time": 1746800523931,
+        "type": "LOGIN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "2e8b8bbd-6be5-4c4f-9321-f4f71dd2b79d",
+        "ID": 318
+    },
+    {
+        "time": 1746801778063,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "ddc63bae-3184-4501-8e09-e1e32a9fce04",
+        "session_id": "44c4b347-e8fa-41b8-adee-fc70507cb929",
+        "ID": 319
+    },
+    {
+        "time": 1746801777755,
+        "type": "LOGIN",
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "44c4b347-e8fa-41b8-adee-fc70507cb929",
+        "ID": 320
+    },
+    {
+        "time": 1746801723956,
+        "type": "LOGOUT",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": null,
+        "session_id": "2e8b8bbd-6be5-4c4f-9321-f4f71dd2b79d",
+        "ID": 321
+    },
+    {
+        "time": 1746801813989,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "0a2832db-0e7f-4f97-b47a-8448bfd7eff7",
+        "session_id": "b1a93a64-e002-492f-9aab-efb49b6a2b68",
+        "ID": 322
+    },
+    {
+        "time": 1746801813677,
+        "type": "LOGIN",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "b1a93a64-e002-492f-9aab-efb49b6a2b68",
+        "ID": 323
+    },
+    {
+        "time": 1746801801766,
+        "type": "LOGOUT",
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": null,
+        "session_id": "44c4b347-e8fa-41b8-adee-fc70507cb929",
+        "ID": 324
+    },
+    {
+        "time": 1746801906733,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "51d70266-13ed-445d-9d1a-0185b9a35fec",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "4ee139b3-3954-43dc-b87a-9a0ee60d2ef4",
+        "session_id": "3ed45b33-e88c-4d37-b147-975b228d7458",
+        "ID": 325
+    },
+    {
+        "time": 1746801906427,
+        "type": "LOGIN",
+        "user_id": "51d70266-13ed-445d-9d1a-0185b9a35fec",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "3ed45b33-e88c-4d37-b147-975b228d7458",
+        "ID": 326
+    },
+    {
+        "time": 1746801881819,
+        "type": "LOGOUT",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": null,
+        "session_id": "b1a93a64-e002-492f-9aab-efb49b6a2b68",
+        "ID": 327
+    },
+    {
+        "time": 1746802099840,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "9ecbbba6-f95a-488e-9345-6712cf78c0e5",
+        "session_id": "2af889fd-1b9d-433f-994c-7767e1115227",
+        "ID": 328
+    },
+    {
+        "time": 1746802099524,
+        "type": "LOGIN",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "2af889fd-1b9d-433f-994c-7767e1115227",
+        "ID": 329
+    },
+    {
+        "time": 1746802088565,
+        "type": "LOGOUT",
+        "user_id": "51d70266-13ed-445d-9d1a-0185b9a35fec",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": null,
+        "session_id": "3ed45b33-e88c-4d37-b147-975b228d7458",
+        "ID": 330
+    },
+    {
+        "time": 1746802405402,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "36c3a660-f09d-4acf-8026-32c6c8ae7eec",
+        "session_id": "b8c7400a-09e5-4b7f-9117-3cf701f17e05",
+        "ID": 331
+    },
+    {
+        "time": 1746802405380,
+        "type": "LOGIN",
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "b8c7400a-09e5-4b7f-9117-3cf701f17e05",
+        "ID": 332
+    },
+    {
+        "time": 1746802206717,
+        "type": "LOGOUT",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": null,
+        "session_id": "2af889fd-1b9d-433f-994c-7767e1115227",
+        "ID": 333
+    },
+    {
+        "time": 1746802861650,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "b8922aba-25db-41a5-ba9a-6efed5bb90e8",
+        "session_id": "0855c0bd-22f7-4a5d-8041-ef64f2aba37d",
+        "ID": 334
+    },
+    {
+        "time": 1746802861347,
+        "type": "LOGIN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "0855c0bd-22f7-4a5d-8041-ef64f2aba37d",
+        "ID": 335
+    },
+    {
+        "time": 1746802514097,
+        "type": "LOGOUT",
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": null,
+        "session_id": "b8c7400a-09e5-4b7f-9117-3cf701f17e05",
+        "ID": 336
+    },
+    {
+        "time": 1746802875780,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "c598df2c-58a5-4aae-9dc1-ceb7982509f1",
+        "session_id": "71ebfd33-3806-47ac-a1ed-8e34213cf9dd",
+        "ID": 337
+    },
+    {
+        "time": 1746802875465,
+        "type": "LOGIN",
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "71ebfd33-3806-47ac-a1ed-8e34213cf9dd",
+        "ID": 338
+    },
+    {
+        "time": 1746802864640,
+        "type": "LOGOUT",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": null,
+        "session_id": "0855c0bd-22f7-4a5d-8041-ef64f2aba37d",
+        "ID": 339
+    },
+    {
+        "time": 1746802914059,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "cbb293a9-77f3-4e7a-a42b-39238a7884ec",
+        "session_id": "6bbd3a59-c6f2-429a-96b1-63a16162f7e5",
+        "ID": 340
+    },
+    {
+        "time": 1746802913741,
+        "type": "LOGIN",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "6bbd3a59-c6f2-429a-96b1-63a16162f7e5",
+        "ID": 341
+    },
+    {
+        "time": 1746802911370,
+        "type": "LOGIN_ERROR",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": null,
+        "ID": 342
+    },
+    {
+        "time": 1746802907232,
+        "type": "LOGOUT",
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": null,
+        "session_id": "71ebfd33-3806-47ac-a1ed-8e34213cf9dd",
+        "ID": 343
+    },
+    {
+        "time": 1746802923050,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "2ffdffc1-cddb-4cc3-851f-f6553c34fdd9",
+        "session_id": "470c7a31-8186-44aa-a76e-284343c4db71",
+        "ID": 344
+    },
+    {
+        "time": 1746802922734,
+        "type": "LOGIN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "470c7a31-8186-44aa-a76e-284343c4db71",
+        "ID": 345
+    },
+    {
+        "time": 1746802917532,
+        "type": "LOGOUT",
+        "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": null,
+        "session_id": "6bbd3a59-c6f2-429a-96b1-63a16162f7e5",
+        "ID": 346
+    },
+    {
+        "time": 1746803560083,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "836b4416-67e5-4de4-836f-78cb139c5e47",
+        "session_id": "20e9e142-e0dc-4b3d-9f2f-8faed55f4ea9",
+        "ID": 347
+    },
+    {
+        "time": 1746803559772,
+        "type": "LOGIN",
+        "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "20e9e142-e0dc-4b3d-9f2f-8faed55f4ea9",
+        "ID": 348
     }
 ]

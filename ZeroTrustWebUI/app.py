@@ -107,7 +107,6 @@ that can be performed at each view
 '''
 #Main route
 @app.route('/')
-@oidc.require_login
 def index():
     if oidc.user_loggedin and token_is_valid(oidc,keycloak_openid):
         return redirect(url_for('home'))
@@ -608,6 +607,7 @@ def approval_status():
     APPROVAL_TIME = 10 
     current_time = datetime.now()
     expiration_time = latest_request.time_of_request + timedelta(minutes=APPROVAL_TIME) 
+    expiration_time_iso = expiration_time.isoformat() # Format to ISO string
 
     if latest_request.requestStatus == 'approved':
         message = 'Request already approved.'
@@ -650,7 +650,7 @@ def approval_status():
                            message=message,
                            reconstructed_secret=reconstructed_secret_str, 
                            threshold=THRESHOLD,
-                           expiration_time=expiration_time,
+                           expiration_time=expiration_time_iso, # Pass ISO string
                            request_status=latest_request.requestStatus, 
                            request_id=latest_request_id) 
 
@@ -746,14 +746,18 @@ def testApproval():
         # return "<h1>Unauthorized: Approver role required.</h1>", 403
         return redirect(url_for('home')) # Redirecting home might be less confusing than revoking token
 
-    # Retrieve the latest access request to display details
-    # You might want to filter requests relevant to this approver if needed
-    access_requests = AccessRequest.query.order_by(AccessRequest.id.desc()).limit(1).all()
+    # Retrieve the latest single access request to display details
+    # Ideally, this should be filtered for requests specifically assigned to this approver
+    # and are still in a 'pending' state. For this fix, we take the latest overall.
+    access_request_to_approve = AccessRequest.query.order_by(AccessRequest.id.desc()).first()
 
     # Note: The secret share is typically sent via email and entered by the approver on the page,
     # so we don't necessarily need to fetch it here unless for display/verification purposes.
 
-    return render_template('apprPage.html', access_requests=access_requests, username=username, email=email, user_id=user_id, user_role=user_role)
+    return render_template('apprPage.html', 
+                           access_request=access_request_to_approve, # Pass single request object
+                           username=username, email=email, 
+                           user_id=user_id, user_role=user_role)
 
 
 @app.route('/approve_request', methods=['POST'])
@@ -765,15 +769,18 @@ def approve_request():
         action = data.get('action')
         approver_id = data.get('approverId')
         secret_share = data.get('secretShare') #retrieve the secret share entered by the approver
+        request_id = data.get('requestId') # Get the specific request ID from the payload
 
-        # Find the latest request associated with this approver
-        # Assuming one approver might have multiple pending requests, target the latest one
-        # Or, you might need a request_id passed from the frontend to be specific
-        latest_request = AccessRequest.query.order_by(AccessRequest.id.desc()).first()
-        if not latest_request:
-             return jsonify({'error': 'No pending access requests found.'}), 404
+        if not request_id:
+            return jsonify({'error': 'Request ID is missing.'}), 400
 
-        approver = Approver.query.filter_by(approverID=approver_id, request_id=latest_request.id).first()
+        # Optional: Verify the AccessRequest itself exists and is in a state to be approved
+        access_request_item = AccessRequest.query.filter_by(id=request_id).first()
+        if not access_request_item:
+            return jsonify({'error': f'Access Request with ID {request_id} not found.'}), 404
+        # Optionally, check access_request_item.requestStatus here
+
+        approver = Approver.query.filter_by(approverID=approver_id, request_id=request_id).first()
 
         if approver:
             # Only update if the action is 'approve' and a secret share is provided
@@ -793,8 +800,8 @@ def approve_request():
             else:
                  return jsonify({'error': 'Invalid action or missing secret share for approval.'}), 400
         else:
-            print(f"Error: Could not find Approver record for ID {approver_id} and Request ID {latest_request.id}")
-            return jsonify({'error': 'Approver record not found for this request.'}), 404
+            print(f"Error: Could not find Approver record for Approver ID {approver_id} and Request ID {request_id}")
+            return jsonify({'error': f'Approver record not found for Approver ID {approver_id} on Request ID {request_id}.'}), 404
 
     return jsonify({'error': 'Invalid Request Method'}), 405
 

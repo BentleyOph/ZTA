@@ -1,42 +1,27 @@
+<!-- FILE: ZeroTrustWebUI/templates/success.html -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>PAM Request Approval</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            text-align: center;
-            margin: 0;
-            padding: 0;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-        }
-
-        h2 {
-            margin: 0;
-            color: #4CAF50;
-        }
-
-        p {
-            margin-top: 20px;
-            font-size: 18px;
-            color: #333;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Request Approved</title>
 </head>
-<body>
-    <div class="container">
-        <h2>Request Approved Successfully</h2>
-        <p>{{ message }}</p>
+<body class="bg-green-50 flex items-center justify-center min-h-screen">
+    <div class="container bg-white p-10 rounded-xl shadow-2xl max-w-lg w-full text-center">
+        <svg class="mx-auto h-20 w-auto text-green-500 mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <h2 class="text-3xl font-bold text-green-600 mb-4">Request Approved Successfully!</h2>
+        {% if message %}
+            <p class="text-gray-700 text-lg mb-8">{{ message }}</p>
+        {% else %}
+            <p class="text-gray-700 text-lg mb-8">Your request has been successfully processed and approved.</p>
+        {% endif %}
+        <a href="{{ url_for('home') }}" 
+           class="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg text-md shadow-md transition duration-150 ease-in-out">
+            Return to Home
+        </a>
     </div>
 </body>
 </html>
