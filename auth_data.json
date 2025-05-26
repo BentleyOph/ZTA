@@ -1528,5 +1528,15 @@
         "auth_status": 1,
         "sign_in_success_ratio": 0.8382352941176472,
         "ID": 153
+    },
+    {
+        "time": 1748281410304,
+        "type": "LOGIN",
+        "user_id": "f7c71c7e-88a1-4de5-be25-aa87bcb1331a",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 1.0,
+        "ID": 154
     }
 ]

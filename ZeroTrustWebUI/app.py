@@ -379,6 +379,15 @@ def display_loans():
     
     return render_template('disbursed_loans.html', loans=loans)
 
+@app.route('/resource-3')
+def display_customer_accounts():
+    # Load customer accounts from JSON file
+    file_path = os.path.join(APP_DIR, 'customer_accounts.json')
+    with open(file_path, 'r') as file:
+        accounts = json.load(file)
+    
+    return render_template('customer_accounts.html', accounts=accounts)
+
 
 
 

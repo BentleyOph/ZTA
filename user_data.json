@@ -6,7 +6,16 @@
         "created_timestamp": 1741248387642,
         "email_verified": false,
         "totp_enabled": false,
-        "user_role": "Policy Administrator"
+        "user_role": "Security Administrator"
+    },
+    {
+        "user_id": "f7c71c7e-88a1-4de5-be25-aa87bcb1331a",
+        "username": "customerservice",
+        "email": "servicerep@gmail.com",
+        "created_timestamp": 1748281298782,
+        "email_verified": true,
+        "totp_enabled": false,
+        "user_role": "Customer Service"
     },
     {
         "user_id": "da200b79-3bc2-40c9-b0cb-61ad4a71f039",
@@ -15,7 +24,7 @@
         "created_timestamp": 1745181063373,
         "email_verified": false,
         "totp_enabled": false,
-        "user_role": "Policy Administrator"
+        "user_role": "Security Analyst"
     },
     {
         "user_id": "51d70266-13ed-445d-9d1a-0185b9a35fec",
@@ -24,7 +33,7 @@
         "created_timestamp": 1745180746033,
         "email_verified": false,
         "totp_enabled": false,
-        "user_role": "Approver"
+        "user_role": "Security Analyst"
     },
     {
         "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
@@ -33,7 +42,7 @@
         "created_timestamp": 1745180499602,
         "email_verified": true,
         "totp_enabled": false,
-        "user_role": "Approver"
+        "user_role": "Loan Officer"
     },
     {
         "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
@@ -42,7 +51,7 @@
         "created_timestamp": 1741284197346,
         "email_verified": true,
         "totp_enabled": false,
-        "user_role": "Approver"
+        "user_role": "Branch Manager"
     },
     {
         "user_id": "7e9e36c3-19c3-4a88-94e6-b3167b8e1b43",
@@ -51,6 +60,6 @@
         "created_timestamp": 1746787053417,
         "email_verified": true,
         "totp_enabled": false,
-        "user_role": "Security Viewer"
+        "user_role": "Security Analyst"
     }
 ]

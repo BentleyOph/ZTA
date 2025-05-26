@@ -1,0 +1,42 @@
+[
+  {
+    "account_id": "ACC001",
+    "customer_name": "Alice Wonderland",
+    "account_type": "Savings",
+    "balance": 15000.75,
+    "currency": "USD",
+    "open_date": "2022-01-15"
+  },
+  {
+    "account_id": "ACC002",
+    "customer_name": "Bob The Builder",
+    "account_type": "Checking",
+    "balance": 5230.50,
+    "currency": "USD",
+    "open_date": "2021-11-20"
+  },
+  {
+    "account_id": "ACC003",
+    "customer_name": "Charlie Brown",
+    "account_type": "Savings",
+    "balance": 8765.00,
+    "currency": "USD",
+    "open_date": "2023-03-10"
+  },
+  {
+    "account_id": "ACC004",
+    "customer_name": "Diana Prince",
+    "account_type": "Investment",
+    "balance": 250000.00,
+    "currency": "USD",
+    "open_date": "2020-07-01"
+  },
+  {
+    "account_id": "ACC005",
+    "customer_name": "Edward Scissorhands",
+    "account_type": "Checking",
+    "balance": 1200.25,
+    "currency": "USD",
+    "open_date": "2023-05-25"
+  }
+]

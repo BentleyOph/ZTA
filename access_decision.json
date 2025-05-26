@@ -1822,5 +1822,521 @@
         },
         "access_decision": 1,
         "timestamp": 1748276306.222957
+    },
+    {
+        "request_ID": 258,
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "user_trust_score": 0.6426700496197975,
+        "trust_score_details": {
+            "overall_score": 0.6426700496197975,
+            "weights": {
+                "user_identity": 0.3,
+                "access_request": 0.25,
+                "authentication_data": 0.2,
+                "experience": 0.15,
+                "anomaly": 0.1
+            },
+            "segments": {
+                "user_identity": {
+                    "overall_score": 0.6000000000000001,
+                    "details": {
+                        "email_verified": {
+                            "score": 1.0,
+                            "weight": 0.4
+                        },
+                        "totp_enabled": {
+                            "score": 0.0,
+                            "weight": 0.2
+                        },
+                        "user_role": {
+                            "score": 0.5,
+                            "weight": 0.4,
+                            "role": "Loan Officer"
+                        }
+                    }
+                },
+                "access_request": {
+                    "overall_score": 0.76,
+                    "details": {
+                        "location": {
+                            "score": 0.7,
+                            "weight": 0.4,
+                            "value": "Nairobi/KE",
+                            "category": "Low Risk"
+                        },
+                        "access_time": {
+                            "score": 0.8,
+                            "weight": 0.3,
+                            "value": "2025-05-26 20:36:24",
+                            "is_night": false
+                        },
+                        "device_os": {
+                            "score": 0.8,
+                            "weight": 0.2,
+                            "value": "Win32"
+                        },
+                        "device_type": {
+                            "score": 0.8,
+                            "weight": 0.1,
+                            "value": "Desktop"
+                        }
+                    }
+                },
+                "authentication_data": {
+                    "overall_score": 0.745,
+                    "details": {
+                        "sign_in_success_ratio": {
+                            "score": 0.75,
+                            "weight": 0.9,
+                            "value": 0.8382352941176472
+                        },
+                        "auth_type": {
+                            "score": 0.7,
+                            "weight": 0.1,
+                            "value": "code"
+                        }
+                    }
+                },
+                "experience": {
+                    "overall_score": 0.6,
+                    "details": {
+                        "tenure_months": 1.1961747796639337
+                    }
+                },
+                "anomaly_prob": 0.6632995038020251
+            }
+        },
+        "access_decision": 1,
+        "timestamp": 1748280984.6599972
+    },
+    {
+        "request_ID": 259,
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "user_trust_score": 0.6482940789737796,
+        "trust_score_details": {
+            "overall_score": 0.6482940789737796,
+            "weights": {
+                "user_identity": 0.3,
+                "access_request": 0.25,
+                "authentication_data": 0.2,
+                "experience": 0.15,
+                "anomaly": 0.1
+            },
+            "segments": {
+                "user_identity": {
+                    "overall_score": 0.6000000000000001,
+                    "details": {
+                        "email_verified": {
+                            "score": 1.0,
+                            "weight": 0.4
+                        },
+                        "totp_enabled": {
+                            "score": 0.0,
+                            "weight": 0.2
+                        },
+                        "user_role": {
+                            "score": 0.5,
+                            "weight": 0.4,
+                            "role": "Loan Officer"
+                        }
+                    }
+                },
+                "access_request": {
+                    "overall_score": 0.76,
+                    "details": {
+                        "location": {
+                            "score": 0.7,
+                            "weight": 0.4,
+                            "value": "Nairobi/KE",
+                            "category": "Low Risk"
+                        },
+                        "access_time": {
+                            "score": 0.8,
+                            "weight": 0.3,
+                            "value": "2025-05-26 20:37:00",
+                            "is_night": false
+                        },
+                        "device_os": {
+                            "score": 0.8,
+                            "weight": 0.2,
+                            "value": "Win32"
+                        },
+                        "device_type": {
+                            "score": 0.8,
+                            "weight": 0.1,
+                            "value": "Desktop"
+                        }
+                    }
+                },
+                "authentication_data": {
+                    "overall_score": 0.745,
+                    "details": {
+                        "sign_in_success_ratio": {
+                            "score": 0.75,
+                            "weight": 0.9,
+                            "value": 0.8382352941176472
+                        },
+                        "auth_type": {
+                            "score": 0.7,
+                            "weight": 0.1,
+                            "value": "code"
+                        }
+                    }
+                },
+                "experience": {
+                    "overall_score": 0.6,
+                    "details": {
+                        "tenure_months": 1.1961885197688915
+                    }
+                },
+                "anomaly_prob": 0.6070592102622043
+            }
+        },
+        "access_decision": 1,
+        "timestamp": 1748281020.3111608
+    },
+    {
+        "request_ID": 260,
+        "user_id": "f7c71c7e-88a1-4de5-be25-aa87bcb1331a",
+        "user_trust_score": 0.6424126592490629,
+        "trust_score_details": {
+            "overall_score": 0.6424126592490629,
+            "weights": {
+                "user_identity": 0.3,
+                "access_request": 0.25,
+                "authentication_data": 0.2,
+                "experience": 0.15,
+                "anomaly": 0.1
+            },
+            "segments": {
+                "user_identity": {
+                    "overall_score": 0.6000000000000001,
+                    "details": {
+                        "email_verified": {
+                            "score": 1.0,
+                            "weight": 0.4
+                        },
+                        "totp_enabled": {
+                            "score": 0.0,
+                            "weight": 0.2
+                        },
+                        "user_role": {
+                            "score": 0.5,
+                            "weight": 0.4,
+                            "role": "Customer Service"
+                        }
+                    }
+                },
+                "access_request": {
+                    "overall_score": 0.76,
+                    "details": {
+                        "location": {
+                            "score": 0.7,
+                            "weight": 0.4,
+                            "value": "Nairobi/KE",
+                            "category": "Low Risk"
+                        },
+                        "access_time": {
+                            "score": 0.8,
+                            "weight": 0.3,
+                            "value": "2025-05-26 20:43:36",
+                            "is_night": false
+                        },
+                        "device_os": {
+                            "score": 0.8,
+                            "weight": 0.2,
+                            "value": "Win32"
+                        },
+                        "device_type": {
+                            "score": 0.8,
+                            "weight": 0.1,
+                            "value": "Desktop"
+                        }
+                    }
+                },
+                "authentication_data": {
+                    "overall_score": 0.88,
+                    "details": {
+                        "sign_in_success_ratio": {
+                            "score": 0.9,
+                            "weight": 0.9,
+                            "value": 1.0
+                        },
+                        "auth_type": {
+                            "score": 0.7,
+                            "weight": 0.1,
+                            "value": "code"
+                        }
+                    }
+                },
+                "experience": {
+                    "overall_score": 0.4,
+                    "details": {
+                        "tenure_months": 4.5306775410970055e-05
+                    }
+                },
+                "anomaly_prob": 0.6358734075093723
+            }
+        },
+        "access_decision": 1,
+        "timestamp": 1748281416.2241933
+    },
+    {
+        "request_ID": 261,
+        "user_id": "f7c71c7e-88a1-4de5-be25-aa87bcb1331a",
+        "user_trust_score": 0.6333609187243959,
+        "trust_score_details": {
+            "overall_score": 0.6333609187243959,
+            "weights": {
+                "user_identity": 0.3,
+                "access_request": 0.25,
+                "authentication_data": 0.2,
+                "experience": 0.15,
+                "anomaly": 0.1
+            },
+            "segments": {
+                "user_identity": {
+                    "overall_score": 0.6000000000000001,
+                    "details": {
+                        "email_verified": {
+                            "score": 1.0,
+                            "weight": 0.4
+                        },
+                        "totp_enabled": {
+                            "score": 0.0,
+                            "weight": 0.2
+                        },
+                        "user_role": {
+                            "score": 0.5,
+                            "weight": 0.4,
+                            "role": "Customer Service"
+                        }
+                    }
+                },
+                "access_request": {
+                    "overall_score": 0.76,
+                    "details": {
+                        "location": {
+                            "score": 0.7,
+                            "weight": 0.4,
+                            "value": "Nairobi/KE",
+                            "category": "Low Risk"
+                        },
+                        "access_time": {
+                            "score": 0.8,
+                            "weight": 0.3,
+                            "value": "2025-05-26 20:43:42",
+                            "is_night": false
+                        },
+                        "device_os": {
+                            "score": 0.8,
+                            "weight": 0.2,
+                            "value": "Win32"
+                        },
+                        "device_type": {
+                            "score": 0.8,
+                            "weight": 0.1,
+                            "value": "Desktop"
+                        }
+                    }
+                },
+                "authentication_data": {
+                    "overall_score": 0.88,
+                    "details": {
+                        "sign_in_success_ratio": {
+                            "score": 0.9,
+                            "weight": 0.9,
+                            "value": 1.0
+                        },
+                        "auth_type": {
+                            "score": 0.7,
+                            "weight": 0.1,
+                            "value": "code"
+                        }
+                    }
+                },
+                "experience": {
+                    "overall_score": 0.4,
+                    "details": {
+                        "tenure_months": 4.78540030585395e-05
+                    }
+                },
+                "anomaly_prob": 0.7263908127560419
+            }
+        },
+        "access_decision": 1,
+        "timestamp": 1748281422.8257143
+    },
+    {
+        "request_ID": 262,
+        "user_id": "f7c71c7e-88a1-4de5-be25-aa87bcb1331a",
+        "user_trust_score": 0.6570668953091949,
+        "trust_score_details": {
+            "overall_score": 0.6570668953091949,
+            "weights": {
+                "user_identity": 0.3,
+                "access_request": 0.25,
+                "authentication_data": 0.2,
+                "experience": 0.15,
+                "anomaly": 0.1
+            },
+            "segments": {
+                "user_identity": {
+                    "overall_score": 0.6000000000000001,
+                    "details": {
+                        "email_verified": {
+                            "score": 1.0,
+                            "weight": 0.4
+                        },
+                        "totp_enabled": {
+                            "score": 0.0,
+                            "weight": 0.2
+                        },
+                        "user_role": {
+                            "score": 0.5,
+                            "weight": 0.4,
+                            "role": "Customer Service"
+                        }
+                    }
+                },
+                "access_request": {
+                    "overall_score": 0.76,
+                    "details": {
+                        "location": {
+                            "score": 0.7,
+                            "weight": 0.4,
+                            "value": "Nairobi/KE",
+                            "category": "Low Risk"
+                        },
+                        "access_time": {
+                            "score": 0.8,
+                            "weight": 0.3,
+                            "value": "2025-05-26 20:43:47",
+                            "is_night": false
+                        },
+                        "device_os": {
+                            "score": 0.8,
+                            "weight": 0.2,
+                            "value": "Win32"
+                        },
+                        "device_type": {
+                            "score": 0.8,
+                            "weight": 0.1,
+                            "value": "Desktop"
+                        }
+                    }
+                },
+                "authentication_data": {
+                    "overall_score": 0.88,
+                    "details": {
+                        "sign_in_success_ratio": {
+                            "score": 0.9,
+                            "weight": 0.9,
+                            "value": 1.0
+                        },
+                        "auth_type": {
+                            "score": 0.7,
+                            "weight": 0.1,
+                            "value": "code"
+                        }
+                    }
+                },
+                "experience": {
+                    "overall_score": 0.4,
+                    "details": {
+                        "tenure_months": 4.952061377631294e-05
+                    }
+                },
+                "anomaly_prob": 0.48933104690805107
+            }
+        },
+        "access_decision": 1,
+        "timestamp": 1748281427.1446223
+    },
+    {
+        "request_ID": 263,
+        "user_id": "f7c71c7e-88a1-4de5-be25-aa87bcb1331a",
+        "user_trust_score": 0.6462271435336,
+        "trust_score_details": {
+            "overall_score": 0.6462271435336,
+            "weights": {
+                "user_identity": 0.3,
+                "access_request": 0.25,
+                "authentication_data": 0.2,
+                "experience": 0.15,
+                "anomaly": 0.1
+            },
+            "segments": {
+                "user_identity": {
+                    "overall_score": 0.6000000000000001,
+                    "details": {
+                        "email_verified": {
+                            "score": 1.0,
+                            "weight": 0.4
+                        },
+                        "totp_enabled": {
+                            "score": 0.0,
+                            "weight": 0.2
+                        },
+                        "user_role": {
+                            "score": 0.5,
+                            "weight": 0.4,
+                            "role": "Customer Service"
+                        }
+                    }
+                },
+                "access_request": {
+                    "overall_score": 0.76,
+                    "details": {
+                        "location": {
+                            "score": 0.7,
+                            "weight": 0.4,
+                            "value": "Nairobi/KE",
+                            "category": "Low Risk"
+                        },
+                        "access_time": {
+                            "score": 0.8,
+                            "weight": 0.3,
+                            "value": "2025-05-26 20:43:59",
+                            "is_night": false
+                        },
+                        "device_os": {
+                            "score": 0.8,
+                            "weight": 0.2,
+                            "value": "Win32"
+                        },
+                        "device_type": {
+                            "score": 0.8,
+                            "weight": 0.1,
+                            "value": "Desktop"
+                        }
+                    }
+                },
+                "authentication_data": {
+                    "overall_score": 0.88,
+                    "details": {
+                        "sign_in_success_ratio": {
+                            "score": 0.9,
+                            "weight": 0.9,
+                            "value": 1.0
+                        },
+                        "auth_type": {
+                            "score": 0.7,
+                            "weight": 0.1,
+                            "value": "code"
+                        }
+                    }
+                },
+                "experience": {
+                    "overall_score": 0.4,
+                    "details": {
+                        "tenure_months": 5.4241182492103106e-05
+                    }
+                },
+                "anomaly_prob": 0.5977285646640007
+            }
+        },
+        "access_decision": 1,
+        "timestamp": 1748281439.3809078
     }
 ]

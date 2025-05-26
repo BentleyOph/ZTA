@@ -429,17 +429,19 @@
         }
 
         function disableOptionsForRole(userRole) {
-            const allOptions = ['option1', 'option2', 'option3', 'option4', 'option5'];
+            const allOptions = ['option1', 'option2', 'option3', 'option4', 'option5', 'optionAnomaly'];
             let enabledOptions = [];
 
-            if (userRole === 'Policy Administrator') {
-                enabledOptions = ['option1', 'option2', 'option3', 'option4'] 
-            } else if (userRole === 'Approver') {
-                enabledOptions = ['option4','option3','option1']; 
-            } else if (userRole === 'Security Viewer'){
-                enabledOptions = ['option3','option5']; 
-            } else {
-                enabledOptions = ['option1', 'option5']; 
+            if (userRole === 'Branch Manager') {
+                enabledOptions = ['option1']; 
+            } else if (userRole === 'Loan Officer' || 'Customer Service') {
+                enabledOptions = ['option1', 'option5']; // Can access loans disbursed (option1) and request PAM (option5)
+            } else if (userRole === 'Security Administrator'){
+                enabledOptions = ['option2', 'option3', 'optionAnomaly']; // Configure sec policies, view logs and anomalies
+            } else if (userRole === 'Security Analyst') {
+                enabledOptions = ['option3', 'option4', 'optionAnomaly']; // View logs, anomalies, and approve PAM
+            }  else {
+                enabledOptions = []; 
             }
 
             allOptions.forEach(optionId => {
