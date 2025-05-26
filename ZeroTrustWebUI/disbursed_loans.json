@@ -1,0 +1,137 @@
+[
+    {
+        "loan_id": "LN001",
+        "borrower_name": "Regional SME Bank",
+        "loan_amount": "500000.00",
+        "interest_rate": "8.5%",
+        "disbursement_date": "2024-01-15",
+        "maturity_date": "2026-01-15",
+        "loan_status": "Active"
+    },
+    {
+        "loan_id": "LN002", 
+        "borrower_name": "Tech Startup Ventures LLC",
+        "loan_amount": "250000.00",
+        "interest_rate": "12.0%",
+        "disbursement_date": "2024-02-10",
+        "maturity_date": "2025-02-10",
+        "loan_status": "Active"
+    },
+    {
+        "loan_id": "LN003",
+        "borrower_name": "Green Energy Solutions Inc",
+        "loan_amount": "750000.00", 
+        "interest_rate": "6.75%",
+        "disbursement_date": "2024-03-05",
+        "maturity_date": "2029-03-05",
+        "loan_status": "Active"
+    },
+    {
+        "loan_id": "LN004",
+        "borrower_name": "Manufacturing Corp",
+        "loan_amount": "1200000.00",
+        "interest_rate": "7.25%",
+        "disbursement_date": "2024-01-20",
+        "maturity_date": "2027-01-20",
+        "loan_status": "Active"
+    },
+    {
+        "loan_id": "LN005",
+        "borrower_name": "Real Estate Development Ltd",
+        "loan_amount": "2000000.00",
+        "interest_rate": "9.0%",
+        "disbursement_date": "2023-12-01",
+        "maturity_date": "2028-12-01",
+        "loan_status": "Active"
+    },
+    {
+        "loan_id": "LN006",
+        "borrower_name": "Healthcare Systems Inc",
+        "loan_amount": "800000.00",
+        "interest_rate": "6.5%",
+        "disbursement_date": "2024-02-28",
+        "maturity_date": "2029-02-28",
+        "loan_status": "Active"
+    },
+    {
+        "loan_id": "LN007",
+        "borrower_name": "Agriculture Co-operative",
+        "loan_amount": "300000.00",
+        "interest_rate": "5.75%",
+        "disbursement_date": "2024-01-10",
+        "maturity_date": "2026-01-10",
+        "loan_status": "Active"
+    },
+    {
+        "loan_id": "LN008",
+        "borrower_name": "Logistics Solutions Ltd",
+        "loan_amount": "450000.00",
+        "interest_rate": "8.0%",
+        "disbursement_date": "2024-03-15",
+        "maturity_date": "2026-03-15",
+        "loan_status": "Active"
+    },
+    {
+        "loan_id": "LN009",
+        "borrower_name": "Education Services Corp",
+        "loan_amount": "600000.00",
+        "interest_rate": "7.5%",
+        "disbursement_date": "2024-02-05",
+        "maturity_date": "2027-02-05",
+        "loan_status": "Active"
+    },
+    {
+        "loan_id": "LN010",
+        "borrower_name": "Construction Holdings Inc",
+        "loan_amount": "950000.00",
+        "interest_rate": "8.75%",
+        "disbursement_date": "2023-11-20",
+        "maturity_date": "2026-11-20",
+        "loan_status": "Active"
+    },
+    {
+        "loan_id": "LN011",
+        "borrower_name": "Renewable Energy Fund",
+        "loan_amount": "1800000.00",
+        "interest_rate": "6.25%",
+        "disbursement_date": "2024-01-08",
+        "maturity_date": "2031-01-08",
+        "loan_status": "Active"
+    },
+    {
+        "loan_id": "LN012",
+        "borrower_name": "Digital Services LLC",
+        "loan_amount": "350000.00",
+        "interest_rate": "11.5%",
+        "disbursement_date": "2024-03-20",
+        "maturity_date": "2025-03-20",
+        "loan_status": "Active"
+    },
+    {
+        "loan_id": "LN013",
+        "borrower_name": "Pharmaceutical Research Inc",
+        "loan_amount": "1100000.00",
+        "interest_rate": "7.0%",
+        "disbursement_date": "2024-02-15",
+        "maturity_date": "2029-02-15",
+        "loan_status": "Active"
+    },
+    {
+        "loan_id": "LN014",
+        "borrower_name": "Automotive Parts Ltd",
+        "loan_amount": "725000.00",
+        "interest_rate": "8.25%",
+        "disbursement_date": "2024-01-25",
+        "maturity_date": "2027-01-25",
+        "loan_status": "Active"
+    },
+    {
+        "loan_id": "LN015",
+        "borrower_name": "Tourism Development Corp",
+        "loan_amount": "550000.00",
+        "interest_rate": "9.5%",
+        "disbursement_date": "2024-03-10",
+        "maturity_date": "2026-03-10",
+        "loan_status": "Active"
+    }
+]

@@ -1664,5 +1664,33 @@
         "device_mac": "00:15:5d:92:6e:31",
         "device_vendor": "Microsoft Corporation",
         "device_OS": "Win32"
+    },
+    {
+        "ID": 256,
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "intent": "Access Request",
+        "resource_requested": "Resource 1",
+        "access_request_time": "2025-05-26 19:17:55",
+        "public_ip_address": "102.211.213.38",
+        "location": "Nairobi/KE",
+        "device_type": "Desktop",
+        "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+        "device_mac": "00:15:5d:c7:74:68",
+        "device_vendor": "Microsoft Corporation",
+        "device_OS": "Win32"
+    },
+    {
+        "ID": 257,
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "intent": "Access Request",
+        "resource_requested": "Resource 2",
+        "access_request_time": "2025-05-26 19:18:26",
+        "public_ip_address": "102.211.213.38",
+        "location": "Nairobi/KE",
+        "device_type": "Desktop",
+        "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+        "device_mac": "00:15:5d:c7:74:68",
+        "device_vendor": "Microsoft Corporation",
+        "device_OS": "Win32"
     }
 ]

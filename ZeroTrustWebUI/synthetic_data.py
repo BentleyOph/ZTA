@@ -3,18 +3,22 @@ import random
 import string
 from datetime import datetime, timedelta
 
-# Sample user IDs
-user_ids = ['user123', 'user456', 'user789', 'user101', 'user202']
+# Sample customer IDs
+customer_ids = ['CUST123', 'CUST456', 'CUST789', 'CUST101', 'CUST202']
 
-# Generate sample transaction types
-transaction_types = ['Top-Up', 'Transfer', 'Bill Payment', 'Withdrawal']
+# Generate sample banking transaction types
+transaction_types = [
+    'Account Transfer', 'Wire Transfer', 'Bill Payment', 'ATM Withdrawal', 
+    'Deposit', 'Account Credit', 'Mobile Payment', 'Credit Card Payment', 
+    'Online Banking Login'
+]
 
 # Generate sample transactions
 transactions = []
 for i in range(45):  # Generate 45 transactions
     transaction = {
         "transaction_id": f"txn_{i + 1}",
-        "user_id": random.choice(user_ids),
+        "customer_id": random.choice(customer_ids),
         "amount": round(random.uniform(10, 500), 2),
         "transaction_type": random.choice(transaction_types),
         "timestamp": (datetime.now() - timedelta(days=random.randint(1, 365))).strftime("%Y-%m-%d %H:%M:%S")

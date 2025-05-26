@@ -371,13 +371,13 @@ def display_transactions():
     return render_template('transaction_simulation.html', transactions=transactions)
 
 @app.route('/resource-2')
-def display_tokens():
-    # Load tokens from JSON file
-    file_path = os.path.join(APP_DIR, 'tokens.json')
+def display_loans():
+    # Load loans from JSON file
+    file_path = os.path.join(APP_DIR, 'disbursed_loans.json')
     with open(file_path, 'r') as file:
-        tokens = json.load(file)
+        loans = json.load(file)
     
-    return render_template('Fintech Access Tokens.html', tokens=tokens)
+    return render_template('disbursed_loans.html', loans=loans)
 
 
 

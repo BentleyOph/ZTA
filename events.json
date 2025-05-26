@@ -3758,5 +3758,25 @@
         "token_id": null,
         "session_id": "2b112bf8-647b-4e71-bdd7-6a3967623db0",
         "ID": 376
+    },
+    {
+        "time": 1748276262854,
+        "type": "CODE_TO_TOKEN",
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "ip_address": "172.22.0.1",
+        "auth_type": null,
+        "token_id": "3f9d8a4b-676f-41f9-a76b-48488a023611",
+        "session_id": "92e3e464-404b-4ef6-afe8-803b6ab69ead",
+        "ID": 377
+    },
+    {
+        "time": 1748276262397,
+        "type": "LOGIN",
+        "user_id": "d2bcb609-de65-4947-ab2a-c68536ddfc7b",
+        "ip_address": "172.22.0.1",
+        "auth_type": "code",
+        "token_id": null,
+        "session_id": "92e3e464-404b-4ef6-afe8-803b6ab69ead",
+        "ID": 378
     }
 ]

@@ -1,22 +1,28 @@
-<!-- FILE: ZeroTrustWebUI/templates/transaction_simulation.html -->
+<!-- FILE: Zero                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer ID</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction Type</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                    </tr>bUI/templates/transaction_simulation.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
-    <title>Mobile Money Transactions</title>
+    <title>Customer Transaction History</title>
 </head>
 <body class="bg-gray-100 p-4 sm:p-8">
     <div class="container mx-auto">
-        <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 text-center mb-10">Mobile Money Transactions</h1>
+        <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 text-center mb-10">Customer Transaction History</h1>
         <div class="overflow-x-auto bg-white shadow-xl rounded-lg">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount (KES)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer ID</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount (USD)</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction Type</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
                     </tr>
@@ -25,14 +31,16 @@
                     {% for transaction in transactions %}
                     <tr class="hover:bg-gray-50 transition-colors duration-150">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ transaction['transaction_id'] }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ transaction['user_id'] }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ transaction['customer_id'] }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right">{{ "%.2f"|format(transaction['amount']) }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                {% if transaction['transaction_type'] == 'Top-Up' %} bg-green-100 text-green-800 
-                                {% elif transaction['transaction_type'] == 'Transfer' %} bg-blue-100 text-blue-800
+                                {% if transaction['transaction_type'] == 'Deposit' or transaction['transaction_type'] == 'Account Credit' %} bg-green-100 text-green-800 
+                                {% elif transaction['transaction_type'] == 'Wire Transfer' or transaction['transaction_type'] == 'Account Transfer' %} bg-blue-100 text-blue-800
                                 {% elif transaction['transaction_type'] == 'Bill Payment' %} bg-yellow-100 text-yellow-800
-                                {% elif transaction['transaction_type'] == 'Withdrawal' %} bg-red-100 text-red-800
+                                {% elif transaction['transaction_type'] == 'ATM Withdrawal' %} bg-red-100 text-red-800
+                                {% elif transaction['transaction_type'] == 'Mobile Payment' or transaction['transaction_type'] == 'Credit Card Payment' %} bg-purple-100 text-purple-800
+                                {% elif transaction['transaction_type'] == 'Online Banking Login' %} bg-indigo-100 text-indigo-800
                                 {% else %} bg-gray-100 text-gray-800 {% endif %}">
                                 {{ transaction['transaction_type'] }}
                             </span>
