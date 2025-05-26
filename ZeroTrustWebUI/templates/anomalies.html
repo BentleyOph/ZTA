@@ -3,19 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logging and Monitoring</title>
+    <title>Anomaly Dashboard</title>
     <style>
         :root {
             --primary: #2563eb;
             --primary-dark: #1d4ed8;
             --secondary: #4f46e5;
             --success: #10b981;
-            --danger: #ef4444;
+            --danger: #ef4444; /* Used for high anomaly probability */
             --warning: #f59e0b;
             --info: #3b82f6;
             --dark: #1e293b;
             --light: #f1f5f9;
             --white: #ffffff;
+            --anomaly-high: #fee2e2; /* Light red for high anomaly rows */
+            --anomaly-high-text: #b91c1c; /* Dark red text for high anomaly */
         }
         
         * {
@@ -170,7 +172,7 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             padding: 1.5rem;
             margin-bottom: 1.5rem;
-            border-left: 4px solid var(--info);
+            border-left: 4px solid var(--danger); /* Anomaly card uses danger color */
         }
         
         .card-header {
@@ -192,7 +194,7 @@
         .card-icon {
             width: 2.5rem;
             height: 2.5rem;
-            background-color: var(--info);
+            background-color: var(--danger); /* Anomaly card icon uses danger color */
             color: white;
             border-radius: 8px;
             display: flex;
@@ -209,13 +211,13 @@
             width: 100%;
             border-collapse: collapse;
             border-spacing: 0;
-            font-size: 0.85rem; /* Slightly smaller font for more data */
+            font-size: 0.85rem;
         }
         
         th, td {
-            padding: 0.65rem 0.9rem; /* Adjusted padding */
+            padding: 0.65rem 0.9rem;
             text-align: left;
-            white-space: nowrap; /* Prevent text wrapping in cells */
+            white-space: nowrap;
         }
         
         th {
@@ -232,23 +234,26 @@
         tbody tr:hover {
             background-color: #f8fafc;
         }
-        
-        tbody tr:last-child {
-            border-bottom: none;
-        }
 
+        .anomaly-score-high {
+            color: var(--danger);
+            font-weight: bold;
+        }
+        .anomaly-score-medium {
+            color: var(--warning);
+            font-weight: 500;
+        }
+        
         .decision-allow {
             color: var(--success);
-            font-weight: bold;
         }
         .decision-deny {
             color: var(--danger);
-            font-weight: bold;
         }
         .decision-pending {
             color: var(--gray);
         }
-        
+
         .footer {
             margin-top: 3rem;
             text-align: center;
@@ -317,7 +322,7 @@
             </a>
             
             <div class="header">
-                <h1 class="page-title">Access Log Monitoring</h1>
+                <h1 class="page-title">Anomaly Detection Log</h1>
             </div>
             
             <div class="card">
@@ -325,72 +330,74 @@
                     <div class="card-title">
                         <div class="card-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
                             </svg>
                         </div>
-                        Access Requests & Decisions Log
+                        Detected Anomalies (Probability > {{ "%.2f"|format(threshold) }})
                     </div>
                 </div>
                 
-                <p>This table displays access requests and their corresponding policy decisions and trust assessments.</p>
+                <p>This table displays access requests that have been flagged with a high anomaly probability by the machine learning model.</p>
                 
                 <div class="table-container">
                     <table>
                         <thead>
                             <tr>
+                                <th>Decision Time</th>
                                 <th>Req. ID</th>
                                 <th>User ID</th>
-                                <th>Req. Time</th>
+                                <th>Anomaly Prob.</th>
                                 <th>Resource</th>
                                 <th>Location</th>
                                 <th>Device OS</th>
                                 <th>Trust Score</th>
-                                <th>Anomaly Prob.</th>
                                 <th>Decision</th>
-                                <th>Decision Time</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for log in access_logs %}
+                            {% if anomalies %}
+                                {% for anomaly in anomalies %}
+                                <tr>
+                                    <td>
+                                        {% if anomaly.timestamp %}
+                                            {{ anomaly.timestamp | int | timestamp_to_datetime }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ anomaly.request_ID }}</td>
+                                    <td title="{{ anomaly.user_id }}">{{ anomaly.user_id[:8] }}...</td>
+                                    <td class="{% if anomaly.anomaly_prob >= 0.8 %}anomaly-score-high{% elif anomaly.anomaly_prob >= 0.6 %}anomaly-score-medium{% endif %}">
+                                        {{ "%.3f"|format(anomaly.anomaly_prob) }}
+                                    </td>
+                                    <td>{{ anomaly.resource_requested }}</td>
+                                    <td>{{ anomaly.location }}</td>
+                                    <td>{{ anomaly.device_OS }}</td>
+                                    <td>
+                                        {% if anomaly.user_trust_score == 'N/A' or anomaly.user_trust_score is none %}
+                                            N/A
+                                        {% else %}
+                                            {{ "%.3f"|format(anomaly.user_trust_score|float) }}
+                                        {% endif %}
+                                    </td>
+                                    <td class="{% if anomaly.access_decision_val == 1 %}decision-allow{% elif anomaly.access_decision_val == 0 %}decision-deny{% else %}decision-pending{% endif %}">
+                                        {% if anomaly.access_decision_val == 1 %}
+                                            Allow
+                                        {% elif anomaly.access_decision_val == 0 %}
+                                            Deny
+                                        {% else %}
+                                            {{ anomaly.access_decision_val | default('Pending') }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
                             <tr>
-                                <td>{{ log['ID'] }}</td>
-                                <td title="{{ log['user_id'] }}">{{ log['user_id'][:8] }}...</td> <!-- Shorten for display -->
-                                <td>{{ log['access_request_time'] }}</td>
-                                <td>{{ log['resource_requested'] }}</td>
-                                <td>{{ log['location'] }}</td>
-                                <td>{{ log['device_OS'] }}</td>
-                                <td>
-                                    {% if log.user_trust_score == 'N/A' %}
-                                        N/A
-                                    {% else %}
-                                        {{ "%.3f"|format(log.user_trust_score|float) }}
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if log.anomaly_prob == 'N/A' %}
-                                        N/A
-                                    {% else %}
-                                        {{ "%.3f"|format(log.anomaly_prob|float) }}
-                                    {% endif %}
-                                </td>
-                                <td class="{% if log.access_decision_val == 1 %}decision-allow{% elif log.access_decision_val == 0 %}decision-deny{% else %}decision-pending{% endif %}">
-                                    {% if log.access_decision_val == 1 %}
-                                        Allow
-                                    {% elif log.access_decision_val == 0 %}
-                                        Deny
-                                    {% else %}
-                                        {{ log.access_decision_val }} {# Typically "Pending" #}
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if log.decision_timestamp %}
-                                        {{ log.decision_timestamp | int | timestamp_to_datetime }}
-                                    {% else %}
-                                        N/A
-                                    {% endif %}
-                                </td>
+                                <td colspan="9" style="text-align: center; padding: 1rem;">No significant anomalies detected above the threshold of {{ "%.2f"|format(threshold) }}.</td>
                             </tr>
-                            {% endfor %}
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
@@ -406,10 +413,5 @@
         function logout() {
             window.location.href = '/revokeToken'; // Ensure this matches your logout route
         }
-
-        // Add a Jinja filter for converting timestamp to datetime string if not already present
-        // This is for client-side JS, but better to do it in Flask if possible.
-        // The Flask `app.py` now handles this conversion using a custom filter.
     </script>
 </body>
-</html>

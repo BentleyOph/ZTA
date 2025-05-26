@@ -31,6 +31,7 @@ app = Flask(__name__)
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 CLIENT_SECRETS_FILE = os.path.join(APP_DIR, 'client_secrets.json')
+ANOMALY_DISPLAY_THRESHOLD = 0.6  
 
 '''
 This section below contains the configuration of the flask OIDC and the keycloak OIDC
@@ -419,13 +420,96 @@ def receive_policy_configurations():
 
 
 @app.route('/logging')
+@oidc.require_login
 def access_requests():
-    file_path = os.path.join(APP_DIR, os.pardir, 'access_requests.json')
+    parent_dir = os.path.join(APP_DIR, os.pardir)
+    access_requests_file = os.path.join(parent_dir, 'access_requests.json')
+    access_decisions_file = os.path.join(parent_dir, 'access_decision.json')
+
+    access_requests_data = []
+    if os.path.exists(access_requests_file):
+        try:
+            with open(access_requests_file, 'r') as f:
     
-    with open(file_path, 'r') as file:
-        access_requests_data = json.load(file)
+                access_requests_data = json.load(f)
+            if not isinstance(access_requests_data, list): # Ensure it's a list
+                    access_requests_data = []
+        except json.JSONDecodeError:
+            print(f"Error decoding {access_requests_file}")
+            access_requests_data = []
     
-    return render_template('logging_and_monitoring.html', access_requests=access_requests_data)
+    access_decisions_data = []
+    if os.path.exists(access_decisions_file):
+        try:
+            with open(access_decisions_file, 'r') as f:
+                access_decisions_data = json.load(f)
+            if not isinstance(access_decisions_data, list): # Ensure it's a list
+                    access_decisions_data = []
+        except json.JSONDecodeError:
+            print(f"Error decoding {access_decisions_file}")
+            access_decisions_data = []
+
+    # Create a dictionary of decisions for efficient lookup
+    decisions_map = {}
+    if access_decisions_data:
+        sorted_decisions = sorted(access_decisions_data, key=lambda x: x.get('timestamp', 0), reverse=True)
+        for decision in sorted_decisions:
+            req_id = decision.get('request_ID')
+            if isinstance(req_id, (int, str)) and req_id not in decisions_map: # Ensure req_id is valid and take latest
+                decisions_map[req_id] = decision
+    
+    combined_logs = []
+    for req in access_requests_data:
+        if not isinstance(req, dict): continue # Skip non-dict items
+        
+        log_entry = req.copy() # Start with all fields from access_requests.json
+        decision = decisions_map.get(req.get('ID'))
+
+        if decision:
+            log_entry['user_trust_score'] = decision.get('user_trust_score', 'N/A')
+            
+            # Safely access nested anomaly_prob
+            trust_details = decision.get('trust_score_details', {})
+            log_entry['anomaly_prob'] = trust_details.get('anomaly_prob') # Check root first
+            if log_entry['anomaly_prob'] is None: # If not at root, check segments (older structure)
+                 segments = trust_details.get('segments', {})
+                 log_entry['anomaly_prob'] = segments.get('anomaly_prob', 'N/A')
+            if not isinstance(log_entry['anomaly_prob'], (float, int)): # If still N/A or other, format
+                 log_entry['anomaly_prob'] = 'N/A'
+
+
+            log_entry['access_decision_val'] = decision.get('access_decision', 'Pending') # Store raw value
+            log_entry['decision_timestamp'] = decision.get('timestamp')
+        else:
+            log_entry['user_trust_score'] = 'N/A'
+            log_entry['anomaly_prob'] = 'N/A'
+            log_entry['access_decision_val'] = 'Pending'
+            log_entry['decision_timestamp'] = None
+        
+        combined_logs.append(log_entry)
+
+    # User info for the sidebar
+    auth_profile = session.get('oidc_auth_profile', {})
+    user_role = session.get('user_role', "User")
+
+    return render_template('logging_and_monitoring.html', 
+                           access_logs=combined_logs,
+                           username=auth_profile.get('name'),
+                           email=auth_profile.get('email'),
+                           user_id=auth_profile.get('sub'),
+                           user_role=user_role)
+
+
+
+@app.template_filter('timestamp_to_datetime')
+def timestamp_to_datetime_filter(s):
+    if s is None or s == 'N/A':
+        return 'N/A'
+    try:
+        # Assuming s is a UNIX timestamp (seconds since epoch)
+        return datetime.fromtimestamp(float(s)).strftime('%Y-%m-%d %H:%M:%S')
+    except (ValueError, TypeError):
+        return 'Invalid Timestamp'
 
 
 
@@ -823,7 +907,100 @@ def simulate():
 
 
 
+@app.route('/anomalies')
+@oidc.require_login
+def anomalies_dashboard():
+    auth_profile = session.get('oidc_auth_profile', {})
+    user_role = session.get('user_role', "User")
 
+    # Role-based access (optional, but good practice for SIEM features)
+    # if user_role not in ["Policy Administrator", "Security Viewer", "Admin"]: # Adjust as needed
+    #     flash("You are not authorized to view the anomaly dashboard.", "warning")
+    #     return redirect(url_for('home'))
+
+    parent_dir = os.path.join(APP_DIR, os.pardir)
+    access_decisions_file = os.path.join(parent_dir, 'access_decision.json')
+    access_requests_file = os.path.join(parent_dir, 'access_requests.json')
+
+    all_decisions = []
+    if os.path.exists(access_decisions_file):
+        try:
+            with open(access_decisions_file, 'r') as f:
+                    all_decisions = json.load(f)
+            if not isinstance(all_decisions, list):
+                    all_decisions = []
+        except json.JSONDecodeError:
+            print(f"Error decoding {access_decisions_file}")
+            all_decisions = []
+
+    all_requests_data = []
+    if os.path.exists(access_requests_file):
+        try:
+            with open(access_requests_file, 'r') as f:
+                    all_requests_data = json.load(f)
+            if not isinstance(all_requests_data, list):
+                    all_requests_data = []
+        except json.JSONDecodeError:
+            print(f"Error decoding {access_requests_file}")
+            all_requests_data = []
+            
+    # Create a dictionary of access requests for quick lookup
+    requests_map = {req.get('ID'): req for req in all_requests_data if isinstance(req, dict)}
+
+    detected_anomalies = []
+    for decision in all_decisions:
+        if not isinstance(decision, dict): continue
+
+        anomaly_prob = None
+        trust_details = decision.get('trust_score_details', {})
+        
+        # Check for anomaly_prob at the root of trust_score_details or within segments
+        if 'anomaly_prob' in trust_details:
+            anomaly_prob = trust_details.get('anomaly_prob')
+        elif 'segments' in trust_details and isinstance(trust_details['segments'], dict) and 'anomaly_prob' in trust_details['segments']:
+            anomaly_prob = trust_details['segments'].get('anomaly_prob')
+
+        if anomaly_prob is not None:
+            try:
+                anomaly_prob_float = float(anomaly_prob)
+                if anomaly_prob_float > ANOMALY_DISPLAY_THRESHOLD:
+                    anomaly_entry = {
+                        'timestamp': decision.get('timestamp'), # Decision timestamp
+                        'request_ID': decision.get('request_ID'),
+                        'user_id': decision.get('user_id'),
+                        'anomaly_prob': anomaly_prob_float,
+                        'user_trust_score': decision.get('user_trust_score'),
+                        'access_decision_val': decision.get('access_decision')
+                    }
+                    
+                    # Add contextual info from access_requests.json
+                    original_request = requests_map.get(anomaly_entry['request_ID'])
+                    if original_request:
+                        anomaly_entry['resource_requested'] = original_request.get('resource_requested')
+                        anomaly_entry['location'] = original_request.get('location')
+                        anomaly_entry['device_OS'] = original_request.get('device_OS')
+                        anomaly_entry['request_time'] = original_request.get('access_request_time')
+                    else:
+                        anomaly_entry['resource_requested'] = 'N/A'
+                        anomaly_entry['location'] = 'N/A'
+                        anomaly_entry['device_OS'] = 'N/A'
+                        anomaly_entry['request_time'] = 'N/A'
+                        
+                    detected_anomalies.append(anomaly_entry)
+            except ValueError:
+                print(f"Could not convert anomaly_prob '{anomaly_prob}' to float for request ID {decision.get('request_ID')}")
+                continue
+    
+    # Sort anomalies by decision timestamp (most recent first)
+    detected_anomalies.sort(key=lambda x: x.get('timestamp', 0), reverse=True)
+
+    return render_template('anomalies.html', 
+                           anomalies=detected_anomalies,
+                           threshold=ANOMALY_DISPLAY_THRESHOLD,
+                           username=auth_profile.get('name'),
+                           email=auth_profile.get('email'),
+                           user_id=auth_profile.get('sub'),
+                           user_role=user_role)
 
 
 

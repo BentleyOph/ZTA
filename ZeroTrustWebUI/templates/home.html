@@ -374,6 +374,21 @@
                     </div>
                     <p class="option-description">Request temporary elevated access using Privileged Access Management.</p>
                 </div>
+                <!-- Option for Anomaly Dashboard -->
+                <div class="option-card option-X" id="optionAnomaly" role="button" tabindex="0" aria-label="Anomaly Dashboard" onclick="redirectToAnomalyDashboard()"> <!-- Choose a color, e.g., option-danger -->
+                    <div class="option-icon" style="background-color: var(--danger);"> <!-- Example using danger color -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                    </div>
+                    <div class="option-title">
+                        <span class="option-number">6</span> <!-- Adjust number accordingly -->
+                        Anomaly Dashboard
+                    </div>
+                    <p class="option-description">View detected anomalies and suspicious activities.</p>
+                </div>
             </div>
             
             <div class="footer">
@@ -386,6 +401,12 @@
         function redirectToResourceSelection() {
             window.location.href = 'resource-selection';
         }
+
+
+        function redirectToAnomalyDashboard(){
+            window.location.href = '/anomalies';
+        }
+
 
         function logout() {
             window.location.href = '/revokeToken';
