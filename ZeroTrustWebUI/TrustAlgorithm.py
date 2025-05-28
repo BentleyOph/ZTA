@@ -157,8 +157,8 @@ def get_anomaly_score(current_features_df):
         # !!! You MUST observe the range of scores from your *training* data's predictions
         # !!! (`results_df['anomaly_score'].describe()` from training script) and adjust these bounds.
         # !!! Or implement a more robust scaling method (e.g., using percentiles).
-        min_expected_score = -0.08566975234705226  # Typical score for clearly normal points (adjust based on training!)
-        max_expected_score = 0.040098993140790656  # Typical score for clearly anomalous points (adjust based on training!)
+        min_expected_score = -0.15100587350257455  # Typical score for clearly normal points (adjust based on training!)
+        max_expected_score = 0.05397560171229245  # Typical score for clearly anomalous points (adjust based on training!)
 
         # Simple linear scaling
         if max_expected_score <= min_expected_score: # Avoid division by zero
