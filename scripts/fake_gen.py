@@ -91,7 +91,7 @@ def make_uuid():
     return make_uuid.counter
 
 
-make_uuid.counter = 200  # start near your sample ID (=243 later)
+make_uuid.counter = 1  # start near your sample ID (=243 later)
 
 
 def random_browser():
@@ -101,13 +101,12 @@ def random_browser():
 
 def random_working_hour_time() -> datetime:
     """Generate a random datetime object within working hours (6 AM to 8 PM)
-    over the last 5 days."""
+    over the last 30 days."""
     now = datetime.now()
-    # Randomly choose a day from the last 5 days (0 to 4 days ago)
     days_ago = random.randint(0, 29)
     target_date = now - timedelta(days=days_ago)
     
-    hour = random.randint(6, 19) # 6 AM to 7:59:59 PM, effectively up to 8 PM
+    hour = random.randint(6, 22) 
     minute = random.randint(0, 59)
     second = random.randint(0, 59)
     return target_date.replace(hour=hour, minute=minute, second=second, microsecond=0)
@@ -121,9 +120,16 @@ def base_event_ml(user: str) -> dict:
         resource = random.choice(RESOURCES)
     elif user_role_for_event == "Loan Officer": # Changed from 'in ["Loan Officer"]' for clarity
         resource = RESOURCES[1]
-    elif user_role_for_event == "Customer Service": # Changed from 'in ["Customer Service"]' for clarity
-        resource = random.choice([RESOURCES[0], RESOURCES[2]]) # Corrected resource selection
+    elif user_role_for_event == "Customer Service": 
+        resource = random.choice([RESOURCES[0], RESOURCES[2]]) 
 
+    device_type = random.choice(DEVICE_TYPES)
+    if device_type == "Desktop":
+        os = OS_CHOICES[0]
+    elif device_type == "Mobile":
+        os = OS_CHOICES[2]
+    elif device_type == "Laptop":
+        os = OS_CHOICES[1]
 
 
     return {
@@ -136,11 +142,11 @@ def base_event_ml(user: str) -> dict:
         "access_request_time": random_working_hour_time().strftime("%Y-%m-%d %H:%M:%S"),
         "public_ip_address": fake.ipv4_public(),
         "location": "Nairobi/KE",
-        "device_type": random.choice(DEVICE_TYPES),
+        "device_type": device_type,
         "browser": random_browser(),
         "device_mac": fake.mac_address(),
         "device_vendor": random.choice(VENDORS),
-        "device_OS": random.choice(OS_CHOICES),
+        "device_OS": os,
     }
 
 
@@ -222,9 +228,11 @@ def mutate_to_anomaly_ml(event: dict) -> dict:
         # Resource accessed remains as per base_event_access, anomaly is the time
 
     elif anomaly_type == "old_os_access":
-        event["device_OS"] = random.choice(["Windows XP", "Windows 7"])
+        if event["device_type"] == "Desktop" or "Laptop":
+            event["device_OS"] = random.choice(["Windows XP", "Windows 7","Linux"])
+        elif event["device_type"] == "Mobile":
+            event["device_OS"] = random.choice(["iOS","Android_8"])
         event["device_vendor"] = "Unknown Vendor"
-        # Resource accessed remains as per base_event_access, anomaly is the OS/vendor
 
     return event
 
