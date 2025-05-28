@@ -71,12 +71,13 @@ class Networking(Node):
         if message.get('intent') == 'request_trust_score':
             user_id = message.get('user_id')
             request_id = message.get('request_ID') # Extract the forwarded request ID
+            resource_val = message.get('resource_requested') # Extract resource_requested
 
-            if user_id is None or request_id is None:
-                print("Error: Missing user_id or request_ID in message from Access Proxy")
+            if user_id is None or request_id is None or resource_val is None:
+                print("Error: Missing user_id, request_ID, or resource_requested in message from Access Proxy")
                 return # Stop processing
 
-            print(f"Received a Trust Score Request From: {user_id} for Request ID: {request_id}")
+            print(f"Received a Trust Score Request From: {user_id} for Request ID: {request_id}, Resource: {resource_val}")
             #get the trust score for this user_id using the trust algorithm
             # This now returns a detailed dictionary
             user_trust_score_details = ta.calculate_overall_trust_score(user_id)
@@ -87,12 +88,13 @@ class Networking(Node):
             data = {
                 'user_id': user_id,
                 'request_ID': request_id, # Pass the original request ID forward again
+                'resource_requested': resource_val, # Pass resource_requested using consistent key
                 'intent': 'request_access_decision',
                 'user_trust_score_details': user_trust_score_details # Send the whole dictionary
             }
             self.send_message_to_node('3',data)
     
-    def make_access_decision(self, user_role, user_trust_score_value, sign_in_success_ratio): # Renamed parameter
+    def make_access_decision(self, user_role, user_trust_score_value, sign_in_success_ratio, resource_requested):
     # Load policy configuration data from YAML file
         with open('policyConfiguration.yml', 'r') as file:
             policy_configuration = yaml.safe_load(file)
@@ -101,28 +103,45 @@ class Networking(Node):
         admin_threshold = float(policy_configuration['adminThreshold'])
         approver_threshold = float(policy_configuration['approverThreshold'])
         security_viewer_threshold = float(policy_configuration['securityViewerThreshold'])
-        # Renamed threshold key
         sign_in_success_ratio_threshold = float(policy_configuration['signInSuccessRatioThreshold'])
+        resource_thresholds = policy_configuration.get('resourceThresholds', {})
 
-        # Initialize verdict
-        verdict = 1 # Default to allow (1)
-
-        # Determine access decision based on user trust score and role-specific thresholds
-        if user_role == 'Approver' and user_trust_score_value < approver_threshold:
-            verdict = 0 # Deny (0)
-        elif user_role == 'Security Viewer' and user_trust_score_value < security_viewer_threshold:
-            verdict = 0 # Deny (0)
-        elif user_role == 'Policy Administrator' and user_trust_score_value < admin_threshold:
-            verdict = 0 # Deny (0)
-        elif user_role not in ['Approver', 'Security Viewer', 'Policy Administrator'] and user_trust_score_value < security_viewer_threshold:
-            verdict = 0 # Deny (0)
-
-        # Corrected Logic: Deny access if the success ratio is BELOW the threshold
+        # 1. Check sign-in success ratio (critical pre-check)
         if sign_in_success_ratio < sign_in_success_ratio_threshold:
-            print(f"Sign-in success ratio ({sign_in_success_ratio}) is below threshold ({sign_in_success_ratio_threshold}). Denying access.")
-            verdict = 0 # Deny (0)
+            print(f"Sign-in success ratio ({sign_in_success_ratio:.2f}) is below threshold ({sign_in_success_ratio_threshold:.2f}). Denying access.")
+            return 0 # Deny
 
-        return verdict
+        # 2. Check resource-specific threshold
+        if resource_requested in resource_thresholds:
+            specific_resource_threshold = float(resource_thresholds[resource_requested])
+            if user_trust_score_value < specific_resource_threshold:
+                print(f"User trust score ({user_trust_score_value:.2f}) is below threshold ({specific_resource_threshold:.2f}) for resource '{resource_requested}'. Denying access.")
+                return 0 # Deny
+            else:
+                print(f"User trust score ({user_trust_score_value:.2f}) meets resource-specific threshold ({specific_resource_threshold:.2f}) for '{resource_requested}'. Allowing access based on this rule.")
+                return 1 # Allow, as resource-specific rule is met and sign-in passed.
+        else:
+            # 3. Fallback to Role-based threshold check (if no resource-specific threshold was found)
+            print(f"No specific threshold for resource '{resource_requested}'. Falling back to role-based thresholds.")
+            threshold_to_use = security_viewer_threshold # Default threshold for unlisted roles
+            role_category = "General"
+
+            if user_role == 'Approver':
+                threshold_to_use = approver_threshold
+                role_category = "Approver"
+            elif user_role == 'Security Viewer':
+                threshold_to_use = security_viewer_threshold
+                role_category = "Security Viewer"
+            elif user_role == 'Policy Administrator':
+                threshold_to_use = admin_threshold
+                role_category = "Policy Administrator"
+            
+            if user_trust_score_value < threshold_to_use:
+                print(f"User trust score ({user_trust_score_value:.2f}) is below {role_category} threshold ({threshold_to_use:.2f}). Denying access.")
+                return 0 # Deny
+            
+            print(f"User trust score ({user_trust_score_value:.2f}) meets applicable {role_category} role-based threshold ({threshold_to_use:.2f}). Allowing access.")
+            return 1 # Allow
 
 
     def process_message_from_trust_engine(self, sender, message):
@@ -133,9 +152,10 @@ class Networking(Node):
             # Extract the detailed trust score dictionary
             user_trust_score_details = message.get('user_trust_score_details')
             original_request_id = message.get('request_ID') # Extract the original request ID
+            resource_val = message.get('resource_requested') # Extract resource_requested
 
-            if user_id is None or original_request_id is None or user_trust_score_details is None:
-                 print("Error: Missing user_id, request_ID, or user_trust_score_details in message from Trust Engine")
+            if user_id is None or original_request_id is None or user_trust_score_details is None or resource_val is None:
+                 print("Error: Missing user_id, request_ID, user_trust_score_details, or resource_requested in message from Trust Engine")
                  return # Stop processing
 
             # Extract the overall score value for decision making
@@ -144,7 +164,7 @@ class Networking(Node):
                 print("Error: Could not extract overall_score from user_trust_score_details")
                 return # Stop processing
 
-            print(f"Received a Request for Access Decision from Trust Engine for User {user_id}, Request ID: {original_request_id}")
+            print(f"Received a Request for Access Decision from Trust Engine for User {user_id}, Request ID: {original_request_id}, Resource: {resource_val}")
             print(f"Current Subject's Overall Trust Score: {user_trust_score_value}")
             print(f"Checking against security policies...")
             user_identity_data = get_user_identity_data_by_id(user_id,'user_data.json')
@@ -184,8 +204,8 @@ class Networking(Node):
                     print(f"Error reading {file_path}: {e}")
                     access_decisions = []
 
-            # Make decision using the extracted overall score value and success ratio
-            verdict = self.make_access_decision(user_role, user_trust_score_value, sign_in_success_ratio) # Pass renamed variable
+            # Make decision using the extracted overall score value, success ratio, and resource
+            verdict = self.make_access_decision(user_role, user_trust_score_value, sign_in_success_ratio, resource_val)
 
             print(f"Policy Engine Verdict: {verdict}")
              # Prepare the access decision data using the original request ID
@@ -222,9 +242,10 @@ class Networking(Node):
         if message.get('intent') == 'Access Request':
             user_id = message.get('user_id')
             request_id = message.get('ID') # Extract the original request ID from the Web UI message
+            resource_val = message.get('resource_requested') # Extract resource_requested
 
-            if user_id is None or request_id is None:
-                print("Error: Missing user_id or ID in message from Web UI")
+            if user_id is None or request_id is None or resource_val is None:
+                print("Error: Missing user_id, ID, or resource_requested in message from Web UI")
                 return # Stop processing if essential data is missing
 
             intent = 'request_trust_score'
@@ -232,6 +253,7 @@ class Networking(Node):
             data = {
                 'user_id': user_id,
                 'request_ID': request_id, # Pass the original request ID forward using 'request_ID' key
+                'resource_requested': resource_val, # Include resource_requested
                 'intent': intent
             }
             self.send_message_to_node('2',data)

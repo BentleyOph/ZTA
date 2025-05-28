@@ -3,10 +3,20 @@ userIdentityWeight: '0.3'
 contextScoreWeight: '0.25'
 expScoreWeight: '0.15'
 anomalyScoreWeight: '0.2'
+
+
+
 adminThreshold: '0.6'
 approverThreshold: '0.6'
 securityViewerThreshold: '0.4'
 signInSuccessRatioThreshold: '0.5'
+
+resourceThresholds:
+  Resource 1: 0.65   # Customer Transaction History  (most sensitive)
+  Resource 2: 0.60   # Disbursed Loans DB
+  Resource 3: 0.58   # Customer Account Info
+
+
 highRiskLocations:
 - ''
 lowRiskLocations:
