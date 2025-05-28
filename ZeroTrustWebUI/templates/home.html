@@ -434,7 +434,7 @@
 
             if (userRole === 'Branch Manager') {
                 enabledOptions = ['option1']; 
-            } else if (userRole === 'Loan Officer' || 'Customer Service') {
+            } else if (userRole === 'Loan Officer' || userRole === 'Customer Service') {
                 enabledOptions = ['option1', 'option5']; // Can access loans disbursed (option1) and request PAM (option5)
             } else if (userRole === 'Security Administrator'){
                 enabledOptions = ['option2', 'option3', 'optionAnomaly']; // Configure sec policies, view logs and anomalies

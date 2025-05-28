@@ -100,12 +100,17 @@ def random_browser():
 
 
 def random_working_hour_time() -> datetime:
-    """Generate a random datetime object within working hours (6 AM to 8 PM)."""
+    """Generate a random datetime object within working hours (6 AM to 8 PM)
+    over the last 5 days."""
     now = datetime.now()
+    # Randomly choose a day from the last 5 days (0 to 4 days ago)
+    days_ago = random.randint(0, 29)
+    target_date = now - timedelta(days=days_ago)
+    
     hour = random.randint(6, 19) # 6 AM to 7:59:59 PM, effectively up to 8 PM
     minute = random.randint(0, 59)
     second = random.randint(0, 59)
-    return now.replace(hour=hour, minute=minute, second=second, microsecond=0)
+    return target_date.replace(hour=hour, minute=minute, second=second, microsecond=0)
 
 
 def base_event_ml(user: str) -> dict:

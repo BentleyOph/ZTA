@@ -147,6 +147,7 @@ def get_anomaly_score(current_features_df):
         # Use the pipeline directly - it handles preprocessing
         # decision_function returns raw scores: lower=normal, higher=anomaly
         anomaly_score_raw = anomaly_pipeline.decision_function(current_features_df)
+        
 
         raw_score = anomaly_score_raw[0] # Get score for the single row
         print(f"Raw Anomaly Score: {raw_score}")
@@ -156,8 +157,8 @@ def get_anomaly_score(current_features_df):
         # !!! You MUST observe the range of scores from your *training* data's predictions
         # !!! (`results_df['anomaly_score'].describe()` from training script) and adjust these bounds.
         # !!! Or implement a more robust scaling method (e.g., using percentiles).
-        min_expected_score = -0.2  # Typical score for clearly normal points (adjust based on training!)
-        max_expected_score = 0.15  # Typical score for clearly anomalous points (adjust based on training!)
+        min_expected_score = -0.08566975234705226  # Typical score for clearly normal points (adjust based on training!)
+        max_expected_score = 0.040098993140790656  # Typical score for clearly anomalous points (adjust based on training!)
 
         # Simple linear scaling
         if max_expected_score <= min_expected_score: # Avoid division by zero
@@ -456,10 +457,10 @@ def calculate_overall_trust_score(user_id):
 
     weight_user_identity = float(policy_configurations.get('userIdentityWeight', 0.3))
     weight_access_request = float(policy_configurations.get('contextScoreWeight', 0.25))
-    weight_authentication_data = float(policy_configurations.get('authScoreWeight', 0.2))
+    weight_authentication_data = float(policy_configurations.get('authScoreWeight', 0.1))
     weight_experience = float(policy_configurations.get('expScoreWeight', 0.15)) # Adjusted slightly
     # *** Add anomalyScoreWeight to your policyConfiguration.yml ***
-    weight_anomaly = float(policy_configurations.get('anomalyScoreWeight', 0.1))
+    weight_anomaly = float(policy_configurations.get('anomalyScoreWeight', 0.2))
 
 
     # Calculate overall trust score based on weighted segments
