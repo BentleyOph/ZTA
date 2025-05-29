@@ -414,7 +414,14 @@
                         }, 3000);
                     } else if (verdict === 1) {
                         // Access granted
-                        document.getElementById('accessGranted').style.display = 'block';
+                        if (data.pam_override === true) {
+                            console.log("Access granted via PAM override.");
+                            document.getElementById('accessGranted').textContent = 'Access granted via Privileged Access Session! Redirecting...';
+                            document.getElementById('accessGranted').style.display = 'block';
+                        } else {
+                            document.getElementById('accessGranted').textContent = 'Access granted! Redirecting to the resource...';
+                            document.getElementById('accessGranted').style.display = 'block';
+                        }
 
                         // Redirect to the appropriate resource
                         setTimeout(() => {

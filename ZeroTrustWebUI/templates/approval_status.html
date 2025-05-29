@@ -426,6 +426,13 @@
                 <div class="secret-display">
                     <code id="reconstructedSecretDisplay">Waiting for sufficient approvals to reconstruct the secret key...</code>
                 </div>
+                
+                <button class="view-resource-btn" id="reconstructBtn" onclick="reconstructSecret()" style="background-color: var(--primary); margin-right: 1rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+                    </svg>
+                    Reconstruct Secret Key
+                </button>
                 {% endif %}
                 
                 <button class="view-resource-btn" onclick="viewProtectedResource()">
@@ -434,6 +441,15 @@
                         <circle cx="12" cy="12" r="3"></circle>
                     </svg>
                     View Protected Resource
+                </button>
+                
+                <button class="view-resource-btn" onclick="createNewRequest()" style="background-color: var(--secondary); margin-left: 1rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                    Create New Request
                 </button>
             </div>
             
@@ -446,6 +462,10 @@
     <script>
         function viewProtectedResource() {
             window.location.href = "/enterSecretKey";
+        }
+
+        function createNewRequest() {
+            window.location.href = "/privilegedAccess";
         }
 
         function logout() {
@@ -478,11 +498,10 @@
                         <line x1="12" y1="8" x2="12" y2="12"></line>
                         <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>
-                    Time remaining: 0 minutes 0 seconds
+                    Time expired!
                 `;
-                reconstructSecret();
-                localStorage.removeItem("expirationTimeISO"); // Use the correct key
-                clearInterval(refreshInterval); // Stop refreshing the page
+                // Remove automatic reconstruction - user must click button
+                localStorage.removeItem("expirationTimeISO");
             } else {
                 var minutes = Math.floor(totalSeconds / 60);
                 var seconds = totalSeconds % 60;
@@ -497,6 +516,13 @@
         }
 
         function reconstructSecret() {
+            // Disable the button to prevent multiple clicks
+            var reconstructBtn = document.getElementById('reconstructBtn');
+            if (reconstructBtn) {
+                reconstructBtn.disabled = true;
+                reconstructBtn.textContent = 'Reconstructing...';
+            }
+            
             fetch('/approval_status', {
                 method: 'POST',
                 headers: {
@@ -513,30 +539,36 @@
             .then(data => {
                 if (data.hasOwnProperty('ERR_THRESH')) {
                     document.getElementById('message').innerHTML = 'Approval Threshold not reached!';
-                }
-                else{
+                    // Re-enable button on error
+                    if (reconstructBtn) {
+                        reconstructBtn.disabled = false;
+                        reconstructBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>Reconstruct Secret Key';
+                    }
+                } else {
                     if(data.hasOwnProperty('reconstructed_secret')){
                         document.getElementById('reconstructedSecretDisplay').textContent = data.reconstructed_secret;
-                        document.getElementById('message').innerHTML = 'Secret Key reconstructed using the Approval threshold!';
+                        document.getElementById('message').innerHTML = 'Secret Key reconstructed successfully!';
+                        // Hide the reconstruct button after successful reconstruction
+                        if (reconstructBtn) {
+                            reconstructBtn.style.display = 'none';
+                        }
                     }
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                // Handle any errors here
+                document.getElementById('message').innerHTML = 'Error occurred during secret reconstruction.';
+                // Re-enable button on error
+                if (reconstructBtn) {
+                    reconstructBtn.disabled = false;
+                    reconstructBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>Reconstruct Secret Key';
+                }
             });
         }
         
         var counter = 0; 
-        // Call the function to initiate the countdown
-        var refreshInterval = setInterval(function() {
-            updateRemainingTime();
-            counter++;
-            if (counter == 5) {
-                counter = 0;
-                location.reload();
-            }
-        }, 1000); // Refresh every second
+        // Call the function to initiate the countdown (display only, no automatic reconstruction)
+       
     </script>
 </body>
 </html>

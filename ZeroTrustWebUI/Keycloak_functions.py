@@ -111,3 +111,18 @@ def get_location(ip_address):
 
 
 
+def get_multiple_client_role_members_emails(keycloak_admin, client_id_str, role_names_list):
+    all_members_emails = set() 
+    for role_name in role_names_list:
+        try:
+            
+            role_members = keycloak_admin.get_client_role_members(client_id=client_id_str, role_name=role_name)
+            for member in role_members:
+                email = member.get('email')
+                if email: 
+                    all_members_emails.add(email)
+        except Exception as e:
+            print(f"Error fetching members for role {role_name} using client_id {client_id_str}: {e}")
+            # Continue to next role if one fails
+            continue
+    return list(all_members_emails)

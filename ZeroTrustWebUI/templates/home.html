@@ -291,6 +291,46 @@
                 <h1 class="page-title">Zero Trust Access and Configuration</h1>
             </div>
             
+            {% if session.get('privileged_access_active_for_request_id') and 
+                  session.get('privileged_access_user_id') == user_id and 
+                  session.get('privileged_access_expires_at') and 
+                  (session.get('privileged_access_expires_at') | float) > (current_timestamp_for_template | float) %}
+                <div class="pam-active-banner" style="background-color: #fef9c3; color: #713f12; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #facc15; text-align: center;">
+                    <strong>Privileged Access Mode is ACTIVE for request #{{ session.get('privileged_access_active_for_request_id') }}.</strong> 
+                    Your enhanced access will expire at: 
+                    <span id="pamExpiryTimeDisplay">{{ (session.get('privileged_access_expires_at') | float) | timestamp_to_datetime }}</span>.
+                    Time remaining: <span id="pamCountdownDisplay">Calculating...</span>
+                </div>
+                <script>
+                    function updatePamBannerCountdown() {
+                        const expiryTimestamp = {{ session.get('privileged_access_expires_at') | float }};
+                        const nowTimestamp = Date.now() / 1000; // Current time in seconds
+                        const diffSeconds = Math.max(0, Math.floor(expiryTimestamp - nowTimestamp));
+                        
+                        const minutes = Math.floor(diffSeconds / 60);
+                        const seconds = diffSeconds % 60;
+                        
+                        const countdownEl = document.getElementById('pamCountdownDisplay');
+                        if (countdownEl) {
+                            if (diffSeconds > 0) {
+                                countdownEl.textContent = `${minutes}m ${seconds < 10 ? '0' : ''}${seconds}s`;
+                            } else {
+                                countdownEl.textContent = "Expired";
+                                // Optionally, auto-refresh the page or prompt user to re-login/refresh
+                                // to clear the banner and revert to normal access.
+                                // Example: setTimeout(() => { location.reload(); }, 2000); // Reload after 2s
+                            }
+                        }
+                    }
+            
+                    // Ensure the element exists before trying to set up the interval
+                    if (document.getElementById('pamExpiryTimeDisplay')) {
+                       setInterval(updatePamBannerCountdown, 1000);
+                       updatePamBannerCountdown(); // Initial call to display immediately
+                    }
+                </script>
+            {% endif %}
+            
             <p>Select from the available options below to manage your Zero Trust environment:</p>
             
             <div class="options-grid">
@@ -433,7 +473,7 @@
             let enabledOptions = [];
 
             if (userRole === 'Branch Manager') {
-                enabledOptions = ['option1']; 
+                enabledOptions = ['option1','option4']; 
             } else if (userRole === 'Loan Officer' || userRole === 'Customer Service') {
                 enabledOptions = ['option1', 'option5']; // Can access loans disbursed (option1) and request PAM (option5)
             } else if (userRole === 'Security Administrator'){

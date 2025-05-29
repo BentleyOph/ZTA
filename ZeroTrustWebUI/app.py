@@ -209,7 +209,7 @@ def home():
                     with open(file_path, 'w') as json_file:
                         json.dump(extracted_data, json_file, indent=4)
 
-                    return render_template('home.html', username=username, email=email, user_id=user_id, user_role=user_role)
+                    return render_template('home.html', username=username, email=email, user_id=user_id, user_role=user_role,current_timestamp_for_template=datetime.now().timestamp())
                 else:
                     return "<h1>NOT AUTHORIZED!</h1>"
             else:
@@ -263,6 +263,32 @@ def get_latest_access_decision(request_id):
 @app.route('/receive-access-request', methods = ['POST'])
 def receive_and_process_access_request():
     data = request.json
+    current_user_id = data.get("userId")
+
+    pam_request_id = session.get('privileged_access_active_for_request_id')
+    pam_user_id_in_session = session.get('privileged_access_user_id')
+    pam_expires_at = session.get('privileged_access_expires_at')
+
+    if pam_request_id and pam_user_id_in_session == current_user_id and \
+       pam_expires_at and datetime.now().timestamp() < pam_expires_at:
+        
+        # Verify that the PAM request ID still corresponds to an 'approved' request
+        # This is a safety check in case the request status was somehow changed after PAM activation
+        active_pam_request = AccessRequest.query.filter_by(id=pam_request_id, requestor_id=current_user_id, requestStatus='approved').first()
+        if active_pam_request:
+            print(f"PAM session active for user {current_user_id} (Request ID: {pam_request_id}). Granting direct access to '{data.get('resource')}'.")
+            # Log this PAM-overridden access if necessary
+            # For now, just return success with a flag
+            return jsonify({'verdict': 1, 'pam_override': True})
+        else:
+            print(f"Warning: PAM session data found for user {current_user_id}, but original PAM request (ID: {pam_request_id}) is no longer valid or approved. Clearing stale PAM session.")
+            session.pop('privileged_access_active_for_request_id', None)
+            session.pop('privileged_access_user_id', None)
+            session.pop('privileged_access_expires_at', None)    
+
+
+
+
     access_requests_file_path = os.path.join(os.path.join(APP_DIR, os.pardir), 'access_requests.json') 
     existing_data = []
     new_id = 1
@@ -529,25 +555,42 @@ def configure_policies():
 @app.route('/privilegedAccess', methods=['GET', 'POST'])
 @oidc.require_login
 def privilegedAccess():
+    # Get the current user's ID from the session
+    current_user_id = session['oidc_auth_profile'].get('sub')
+    
+    # Check if user already has a pending PAM request
+    existing_pending_request = AccessRequest.query.filter_by(
+        requestor_id=current_user_id,
+        requestStatus='pending'
+    ).order_by(AccessRequest.id.desc()).first()
+    
+    if existing_pending_request:
+        # User already has a pending request, redirect to approval status
+        return redirect(url_for('approval_status'))
+    
     #dynamically query the keycloak API for the list of approvers to display for the requestor
     client_id = keycloak_admin.get_client_id(KEYCLOAK_CLIENT_ID)
-    role_name = "Approver"
-    email_addresses = get_client_role_members_emails(keycloak_admin,client_id, role_name)
+    role_name = ["Security Analyst","Branch Manager"]
+    email_addresses = get_multiple_client_role_members_emails(keycloak_admin,client_id, role_name)
 
-    if email_addresses is None:
-        email_addresses = []
-
-    num_shares = len(email_addresses) #equal to the number of approvers
+    num_total_approvers = len(email_addresses) # Renamed for clarity
 
     global THRESHOLD
-    if num_shares > 0: 
-        THRESHOLD = math.floor(num_shares * 0.8) 
-    else:
-        THRESHOLD = 0 
+    if num_total_approvers == 0:
+        # It's better to handle this case by not allowing request submission if no approvers.
+        # For now, return an error if form is submitted.
+        # The template rendering should ideally check this too.
+        THRESHOLD = 0 # Or some indicator that PAM is not possible
+    elif num_total_approvers == 1:
+        THRESHOLD = 1 # SSS threshold k=1
+    else: # num_total_approvers >= 2
+        # Policy: 80% of total approvers, but at least 2.
+        calculated_threshold = math.floor(num_total_approvers * 0.8)
+        THRESHOLD = max(2, calculated_threshold)
 
     if request.method == 'POST':
         # Get form data
-        resource_name = request.form['resource_name']
+        resource_name = "All resources"
         reason_for_access = request.form['reason_for_access']
         access_duration = int(request.form['access_duration'])
         # Get the current user's ID and username from the session
@@ -560,8 +603,24 @@ def privilegedAccess():
         selected_approvers = request.form.getlist('approvers')
 
         num_selected_shares = len(selected_approvers)
-        if num_selected_shares == 0:
-             return "Please select at least one approver.", 400
+        
+        if num_total_approvers == 0: # Should be caught earlier, but double check
+             return "No approvers available to assign for PAM request.", 400
+
+        # Validate number of selected approvers
+        # Form implies "Select at least two", this check can be more dynamic based on THRESHOLD
+        # For SSS, k (THRESHOLD) must be > 0. n (num_selected_shares) must be >= k.
+        # And policy might dictate minimum n.
+        if THRESHOLD == 0 : # Should not happen if num_total_approvers > 0
+            return "System error: Invalid approval threshold calculated.", 500
+
+        if num_selected_shares < THRESHOLD:
+             return f"Please select at least {THRESHOLD} approver(s) to meet the approval policy. You selected {num_selected_shares}.", 400
+        
+        # Ensure num_selected_shares is at least 1 (or 2 if THRESHOLD can be 1 but policy needs 2 shares)
+        # The check num_selected_shares < THRESHOLD already covers k > 0 and k <= n if THRESHOLD >= 1
+        # If THRESHOLD is 1 (e.g. only 1 total approver), num_selected_shares must be at least 1.
+        # If THRESHOLD is 2, num_selected_shares must be at least 2.
 
         secret_key = PAM.generate_secret_message(45)
         secret_key_identifier = PAM.generate_secret_message(4) 
@@ -634,11 +693,21 @@ def approval_status():
     elif THRESHOLD is None:
         THRESHOLD = 0 
 
+    # Check if PAM session has expired
+    APPROVAL_TIME = 6 
+    current_time = datetime.now()
+    expiration_time = latest_request.time_of_request + timedelta(minutes=APPROVAL_TIME) 
+    expiration_time_iso = expiration_time.isoformat()
+    pam_expired = current_time > expiration_time
+
     if request.method == 'POST':
          data = request.json
          action = data.get('action')
 
          if action == 'reconstruct_secret':
+            if pam_expired:
+                return jsonify({'ERR_EXPIRED': 'This PAM request has expired. Please create a new request.'}), 400
+            
             if approved_approvers_count >= THRESHOLD:
                 message = 'Threshold for Approval Met! Reconstructing key...'
                 secret_shares = [approver.approver_secret_share for approver in approved_approvers_records if approver.approver_secret_share] 
@@ -682,13 +751,12 @@ def approval_status():
     message = ''
     reconstructed_secret_str = None 
 
-    APPROVAL_TIME = 10 
-    current_time = datetime.now()
-    expiration_time = latest_request.time_of_request + timedelta(minutes=APPROVAL_TIME) 
-    expiration_time_iso = expiration_time.isoformat() # Format to ISO string
-
-    if latest_request.requestStatus == 'approved':
+    if pam_expired:
+        message = 'This PAM request has expired. You can create a new request.'
+        request_status = 'expired'
+    elif latest_request.requestStatus == 'approved':
         message = 'Request already approved.'
+        request_status = latest_request.requestStatus
         if approved_approvers_count >= THRESHOLD:
             secret_shares = [approver.approver_secret_share for approver in approved_approvers_records if approver.approver_secret_share]
             if len(secret_shares) >= THRESHOLD:
@@ -718,21 +786,20 @@ def approval_status():
 
     elif approved_approvers_count >= THRESHOLD:
          message = 'Approvals threshold met. Ready for secret reconstruction.'
-
+         request_status = latest_request.requestStatus
     else: 
         message = 'Waiting for more approvers...'
-
+        request_status = latest_request.requestStatus
 
     return render_template('approval_status.html',
                            approval_info=approval_info,
                            message=message,
                            reconstructed_secret=reconstructed_secret_str, 
                            threshold=THRESHOLD,
-                           expiration_time=expiration_time_iso, # Pass ISO string
-                           request_status=latest_request.requestStatus, 
-                           request_id=latest_request_id) 
-
-
+                           expiration_time=expiration_time_iso,
+                           request_status=request_status, 
+                           request_id=latest_request_id,
+                           pam_expired=pam_expired)
 @app.route('/success', methods = ['GET'])
 def approval_success():
     return render_template('success.html')
@@ -742,16 +809,41 @@ def process_secret_key():
 
     if request.method == 'POST':
         entered_secret_key = request.form.get('secret_key')
+        current_user_logged_in_id = session.get('oidc_auth_profile', {}).get('sub')
+        if not current_user_logged_in_id:
+            return "User session not found. Please log in again.", 401
 
-        if entered_secret_key:
-            response = requests.post('http://127.0.0.1:5000/hidden_resource',data={'secret_key': entered_secret_key})
+        latest_approved_request = AccessRequest.query.filter_by(
+            requestor_id=current_user_logged_in_id,
+            requestStatus='approved' # Ensure it's an *approved* request by the approvers
+        ).order_by(AccessRequest.id.desc()).first()
 
-            if response.text == 'Valid':
-                return redirect('/configurePolicies')
+        if latest_approved_request and latest_approved_request.secret_key:
+            secret_message_from_db = latest_approved_request.secret_key
+            
+            if entered_secret_key == secret_message_from_db:
+                print(f"PAM Secret key VALID for Request ID {latest_approved_request.id} by user {current_user_logged_in_id}.")
+                access_duration = latest_approved_request.access_duration
+                
+                # Store PAM session details
+                session['privileged_access_active_for_request_id'] = latest_approved_request.id
+                session['privileged_access_user_id'] = latest_approved_request.requestor_id
+                session['privileged_access_expires_at'] = (datetime.now() + timedelta(minutes=access_duration)).timestamp()
+                
+                print(f"PAM session activated for user {latest_approved_request.requestor_id}, expires at {datetime.fromtimestamp(session['privileged_access_expires_at'])}")
+                return redirect(url_for('home')) 
             else:
-                return "INVALID SECRET KEY"
+                print(f"PAM Secret key INVALID for Request ID {latest_approved_request.id}.")
+                # TODO: Render template with error message
+                return "Invalid secret key. Please try again.", 400 
+        else:
+            print(f"Error: Could not find an approved PAM request with a secret key for user {current_user_logged_in_id}.")
+            # TODO: Render template with error message
+            return "Error: Could not validate secret key. No relevant approved request found.", 404
             
     return render_template('enterSecretKey.html')
+
+            
 
 @app.route('/hidden_resource', methods=['POST'])
 def hidden_resource():
@@ -819,7 +911,7 @@ def testApproval():
         user_role = user_roles[0] if user_roles else None # Get the first role
 
     #check if the user is part of the approvers group
-    if user_role != "Approver":
+    if user_role not in ["Security Analyst", "Branch Manager"]:  # Adjust roles as needed
         # Optionally, you might want to show an error page or just redirect home
         # return "<h1>Unauthorized: Approver role required.</h1>", 403
         return redirect(url_for('home')) # Redirecting home might be less confusing than revoking token

@@ -8,7 +8,9 @@ class PAM:
     def generate_secret_shares(threshold, num_shares, secret_key, identifier):
         # Ensure the secret key is bytes
         secret_key_bytes = secret_key.encode('utf-8')
-        shares = tss.share_secret(threshold, num_shares, secret_key_bytes, identifier, tss.Hash.SHA256)
+        # Ensure the identifier is bytes
+        identifier_bytes = identifier.encode('utf-8')
+        shares = tss.share_secret(threshold, num_shares, secret_key_bytes, identifier_bytes, tss.Hash.SHA256)
         # Encode shares in Base64
         base64_shares = [base64.b64encode(share).decode('utf-8') for share in shares]
         return base64_shares
@@ -53,5 +55,5 @@ class PAM:
         alphabet = string.ascii_letters + string.digits  # Only letters and digits
         secret_message = ''.join(secrets.choice(alphabet) for _ in range(length))
         return secret_message
-    
+
 

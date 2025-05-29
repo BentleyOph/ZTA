@@ -2,9 +2,9 @@
     {
         "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
         "username": "bento",
-        "email": "bentleyonyango@gmail.com",
+        "email": "test@gmail.com",
         "created_timestamp": 1741248387642,
-        "email_verified": false,
+        "email_verified": true,
         "totp_enabled": false,
         "user_role": "Security Administrator"
     },
@@ -47,7 +47,7 @@
     {
         "user_id": "b51b2e35-ee9d-4e6a-9118-8c288582219d",
         "username": "test",
-        "email": "test@gmail.com",
+        "email": "bentleyonyango@gmail.com",
         "created_timestamp": 1741284197346,
         "email_verified": true,
         "totp_enabled": false,
