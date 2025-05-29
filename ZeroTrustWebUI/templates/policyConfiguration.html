@@ -242,7 +242,7 @@
         <h1>Policy Configuration</h1>
         <h2>Configure ZTA System Security Policies</h2>
         
-        <div id="remainingTime">Time remaining: <span id="countdown">-- : --</span></div>
+        <!-- REMOVED: <div id="remainingTime">Time remaining: <span id="countdown">-- : --</span></div> -->
         
         <!-- Trust Algorithm Weights Assignment Section -->
         <div class="section">
@@ -299,6 +299,27 @@
                 </div>
             </div>
         </div>
+
+        <!-- Resource Access Thresholds Section -->
+        <div class="section">
+            <div class="section-title">Resource Access Thresholds</div>
+            <div class="section-content">
+                <div class="grid-container">
+                    <div class="grid-item">
+                        <div class="segment-name">Resource 1 (Customer Transaction History)</div>
+                        <input id="resource1Threshold" type="number" step="0.01" min="0" max="1" value="0.65">
+                    </div>
+                    <div class="grid-item">
+                        <div class="segment-name">Resource 2 (Disbursed Loans DB)</div>
+                        <input id="resource2Threshold" type="number" step="0.01" min="0" max="1" value="0.60">
+                    </div>
+                    <div class="grid-item">
+                        <div class="segment-name">Resource 3 (Customer Account Info)</div>
+                        <input id="resource3Threshold" type="number" step="0.01" min="0" max="1" value="0.58">
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <!-- Contextual Policy Configurations -->
         <div class="section">
@@ -333,8 +354,8 @@
                 
                 <div class="two-column">
                     <div>
-                        <div class="segment-name">Sign-in-Risk Threshold (Success Ratio)</div>
-                        <input id="signInRiskThreshold" type="number" step="0.1" min="0" max="1" value="0.5">
+                        <div class="segment-name">Sign-in Success Ratio Threshold</div>
+                        <input id="signInSuccessRatioThreshold" type="number" step="0.1" min="0" max="1" value="0.5">
                     </div>
                     
                     <div>
@@ -382,35 +403,6 @@
             return Math.abs(sum - 1) < 0.001;
         }
 
-        // Function to update the countdown timer
-        function updateRemainingTime() {
-            var currentTime = new Date();
-            var expirationTime = localStorage.getItem("expirationTime");
-
-            if (!expirationTime) {
-                expirationTime = new Date('{{ expiration_time }}');
-                localStorage.setItem("expirationTime", expirationTime);
-            } else {
-                expirationTime = new Date(expirationTime);
-            }
-
-            var timeDiff = expirationTime.getTime() - currentTime.getTime();
-            var totalSeconds = Math.floor(timeDiff / 1000);
-            var countdownElement = document.getElementById('countdown');
-
-            if (totalSeconds <= 0) {
-                countdownElement.textContent = "0:00";
-                alert("YOUR ACCESS TIME HAS EXPIRED!");
-                window.location.href = '/revokeToken';
-                localStorage.removeItem("expirationTime");
-                clearInterval(refreshInterval);
-            } else {
-                var minutes = Math.floor(totalSeconds / 60);
-                var seconds = totalSeconds % 60;
-                countdownElement.textContent = minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
-            }
-        }
-
         // Function to save the configurations
         function saveConfigurations() {
             // Validate weights sum to 1
@@ -442,7 +434,11 @@
             const mediumRiskLocations = Array.from(document.querySelectorAll('#mediumRiskLocations input.risk-location')).map(input => input.value).filter(value => value.trim() !== '');
             const lowRiskLocations = Array.from(document.querySelectorAll('#lowRiskLocations input.risk-location')).map(input => input.value).filter(value => value.trim() !== '');
 
-            const signInRiskThreshold = document.getElementById('signInRiskThreshold').value;
+            const signInSuccessRatioThreshold = document.getElementById('signInSuccessRatioThreshold').value;
+
+            const resource1Threshold = document.getElementById('resource1Threshold').value;
+            const resource2Threshold = document.getElementById('resource2Threshold').value;
+            const resource3Threshold = document.getElementById('resource3Threshold').value;
 
             const payload = {
                 userIdentityWeight,
@@ -453,10 +449,15 @@
                 approverThreshold,
                 adminThreshold,
                 securityViewerThreshold,
+                resourceThresholds: {
+                    "Resource 1": resource1Threshold,
+                    "Resource 2": resource2Threshold,
+                    "Resource 3": resource3Threshold
+                },
                 highRiskLocations,
                 mediumRiskLocations,
                 lowRiskLocations,
-                signInRiskThreshold,
+                signInSuccessRatioThreshold,
                 periodStartInput,
                 periodEndInput
             };
@@ -471,7 +472,6 @@
             .then(response => {
                 if (response.ok) {
                     console.log('Configurations saved successfully!');
-                    alert('Policy Configurations have been saved successfully!');
                     window.location.href = '/home';
                 } else {
                     console.error('Failed to save configurations');
@@ -484,12 +484,6 @@
             });
         }
 
-        // Initialize countdown timer
-        updateRemainingTime();
-        
-        // Update timer every second
-        var refreshInterval = setInterval(updateRemainingTime, 1000);
-        
         // Initialize validation for weights
         const weightInputs = [
             'userIdentityWeight', 

@@ -524,22 +524,7 @@ def timestamp_to_datetime_filter(s):
 
 @app.route('/configurePolicies')
 def configure_policies():
-    # Retrieve the access duration from the database for the latest approved request ID
-
-    latest_access_request = AccessRequest.query.order_by(AccessRequest.id.desc()).limit(1).all()  # Adjust 'limit' as needed
-
-    if latest_access_request:
-
-        for request in latest_access_request:
-            access_duration = request.access_duration
-
-            # Get the current time
-            current_time = datetime.now()
-            
-            # Calculate the expiration time by adding access duration to the current time
-            expiration_time = current_time + timedelta(minutes=access_duration)
-
-            return render_template('policyConfiguration.html', expiration_time=expiration_time)
+    return render_template('policyConfiguration.html')
 
 @app.route('/privilegedAccess', methods=['GET', 'POST'])
 @oidc.require_login
