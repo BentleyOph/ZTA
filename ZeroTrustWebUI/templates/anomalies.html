@@ -32,6 +32,42 @@
             color: #334155;
             line-height: 1.6;
         }
+
+        .controls-container {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 1rem;
+            background-color: var(--white);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .controls-container input[type="text"],
+        .controls-container select {
+            padding: 0.65rem;
+            border: 1px solid #d1d5db; /* Tailwind gray-300 */
+            border-radius: 6px;
+            font-size: 0.875rem;
+            background-color: var(--white);
+            color: var(--dark);
+        }
+        .controls-container input[type="text"] {
+            flex-grow: 1;
+            min-width: 200px;
+        }
+        .controls-container label {
+            font-size: 0.875rem;
+            color: var(--dark);
+            margin-right: 0.25rem;
+        }
+        
+        body {
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
         
         .dashboard {
             display: flex;
@@ -324,6 +360,30 @@
             <div class="header">
                 <h1 class="page-title">Anomaly Detection Log</h1>
             </div>
+
+            <div class="controls-container">
+                <input type="text" id="searchInput" placeholder="Search (User ID, Resource, Location, OS)...">
+                
+                <label for="sortColumn">Sort by:</label>
+                <select id="sortColumn">
+                    <option value="0">Decision Time</option>
+                    <option value="3">Anomaly Prob.</option>
+                    <option value="7">Trust Score</option>
+                </select>
+                
+                <label for="sortOrder">Order:</label>
+                <select id="sortOrder">
+                    <option value="desc">Descending</option>
+                    <option value="asc">Ascending</option>
+                </select>
+                
+                <label for="filterDecision">Decision:</label>
+                <select id="filterDecision">
+                    <option value="">All Decisions</option>
+                    <option value="1">Allow</option>
+                    <option value="0">Deny</option>
+                </select>
+            </div>
             
             <div class="card">
                 <div class="card-header">
@@ -356,11 +416,11 @@
                                 <th>Decision</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="anomaliesTableBody">
                             {% if anomalies %}
                                 {% for anomaly in anomalies %}
                                 <tr>
-                                    <td>
+                                    <td data-sort-value="{{ anomaly.timestamp | default(0) }}">
                                         {% if anomaly.timestamp %}
                                             {{ anomaly.timestamp | int | timestamp_to_datetime }}
                                         {% else %}
@@ -369,20 +429,20 @@
                                     </td>
                                     <td>{{ anomaly.request_ID }}</td>
                                     <td title="{{ anomaly.user_id }}">{{ anomaly.user_id[:8] }}...</td>
-                                    <td class="{% if anomaly.anomaly_prob >= 0.8 %}anomaly-score-high{% elif anomaly.anomaly_prob >= 0.6 %}anomaly-score-medium{% endif %}">
+                                    <td data-sort-value="{{ anomaly.anomaly_prob | default(-1) }}" class="{% if anomaly.anomaly_prob >= 0.8 %}anomaly-score-high{% elif anomaly.anomaly_prob >= 0.6 %}anomaly-score-medium{% endif %}">
                                         {{ "%.3f"|format(anomaly.anomaly_prob) }}
                                     </td>
                                     <td>{{ anomaly.resource_requested }}</td>
                                     <td>{{ anomaly.location }}</td>
                                     <td>{{ anomaly.device_OS }}</td>
-                                    <td>
+                                    <td data-sort-value="{{ anomaly.user_trust_score if anomaly.user_trust_score != 'N/A' and anomaly.user_trust_score is not none else -1 }}">
                                         {% if anomaly.user_trust_score == 'N/A' or anomaly.user_trust_score is none %}
                                             N/A
                                         {% else %}
                                             {{ "%.3f"|format(anomaly.user_trust_score|float) }}
                                         {% endif %}
                                     </td>
-                                    <td class="{% if anomaly.access_decision_val == 1 %}decision-allow{% elif anomaly.access_decision_val == 0 %}decision-deny{% else %}decision-pending{% endif %}">
+                                    <td data-filter-value="{{ anomaly.access_decision_val }}" class="{% if anomaly.access_decision_val == 1 %}decision-allow{% elif anomaly.access_decision_val == 0 %}decision-deny{% else %}decision-pending{% endif %}">
                                         {% if anomaly.access_decision_val == 1 %}
                                             Allow
                                         {% elif anomaly.access_decision_val == 0 %}
@@ -394,7 +454,7 @@
                                 </tr>
                                 {% endfor %}
                             {% else %}
-                            <tr>
+                            <tr id="noAnomaliesRow">
                                 <td colspan="9" style="text-align: center; padding: 1rem;">No significant anomalies detected above the threshold of {{ "%.2f"|format(threshold) }}.</td>
                             </tr>
                             {% endif %}
@@ -413,5 +473,100 @@
         function logout() {
             window.location.href = '/revokeToken'; // Ensure this matches your logout route
         }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('searchInput');
+            const sortColumnSelect = document.getElementById('sortColumn');
+            const sortOrderSelect = document.getElementById('sortOrder');
+            const filterDecisionSelect = document.getElementById('filterDecision');
+            const tableBody = document.getElementById('anomaliesTableBody');
+            const originalRows = Array.from(tableBody.querySelectorAll('tr'));
+            const noAnomaliesRow = document.getElementById('noAnomaliesRow'); // Assuming you have one for no data
+            const colCount = 9; // Number of columns in the table
+
+            function applyTableControls() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const sortColumn = parseInt(sortColumnSelect.value);
+                const sortOrder = sortOrderSelect.value;
+                const filterDecision = filterDecisionSelect.value;
+
+                let filteredRows = originalRows.filter(row => {
+                    if (row.id === 'noAnomaliesRow' || row.id === 'noResultsRow') return false; // Exclude placeholder rows
+
+                    // Search filter
+                    const searchableCols = [1, 2, 4, 5, 6]; // Req.ID, User ID, Resource, Location, Device OS
+                    let matchesSearch = searchableCols.some(colIndex => {
+                        const cellText = row.cells[colIndex] ? row.cells[colIndex].textContent.toLowerCase() : '';
+                        return cellText.includes(searchTerm);
+                    });
+                    if (!matchesSearch && searchTerm) return false;
+
+                    // Decision filter
+                    if (filterDecision) {
+                        const decisionCell = row.cells[8]; // Decision column
+                        const decisionValue = decisionCell ? decisionCell.getAttribute('data-filter-value') : null;
+                        if (String(decisionValue) !== filterDecision) return false;
+                    }
+                    return true;
+                });
+
+                // Sort
+                filteredRows.sort((rowA, rowB) => {
+                    const cellA = rowA.cells[sortColumn];
+                    const cellB = rowB.cells[sortColumn];
+                    
+                    let valA = cellA ? cellA.getAttribute('data-sort-value') : null;
+                    let valB = cellB ? cellB.getAttribute('data-sort-value') : null;
+
+                    // Handle N/A or non-numeric by treating as very small/large number or empty string
+                    const isNumericColumn = [0, 3, 7].includes(sortColumn); // Decision Time (timestamp), Anomaly Prob, Trust Score
+
+                    if (isNumericColumn) {
+                        valA = parseFloat(valA);
+                        valB = parseFloat(valB);
+                        if (isNaN(valA)) valA = (sortOrder === 'asc' ? Infinity : -Infinity);
+                        if (isNaN(valB)) valB = (sortOrder === 'asc' ? Infinity : -Infinity);
+                    } else { // String comparison for other columns if made sortable
+                        valA = String(valA).toLowerCase();
+                        valB = String(valB).toLowerCase();
+                    }
+
+                    if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+                    if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+                    return 0;
+                });
+
+                // Re-populate table
+                tableBody.innerHTML = ''; // Clear existing rows
+                if (filteredRows.length > 0) {
+                    filteredRows.forEach(row => tableBody.appendChild(row));
+                } else if (noAnomaliesRow && originalRows.includes(noAnomaliesRow) && !searchTerm && !filterDecision) {
+                    // If original "no anomalies" message exists and no filters applied
+                    tableBody.appendChild(noAnomaliesRow);
+                }
+                 else {
+                    const noResultsTr = document.createElement('tr');
+                    noResultsTr.id = 'noResultsRow';
+                    const noResultsTd = document.createElement('td');
+                    noResultsTd.colSpan = colCount;
+                    noResultsTd.textContent = 'No anomalies match your criteria.';
+                    noResultsTd.style.textAlign = 'center';
+                    noResultsTd.style.padding = '1rem';
+                    noResultsTr.appendChild(noResultsTd);
+                    tableBody.appendChild(noResultsTr);
+                }
+            }
+
+            searchInput.addEventListener('input', applyTableControls);
+            sortColumnSelect.addEventListener('change', applyTableControls);
+            sortOrderSelect.addEventListener('change', applyTableControls);
+            filterDecisionSelect.addEventListener('change', applyTableControls);
+
+            // Initial application of controls if needed (e.g., default sort)
+            if (originalRows.length > 0 && !(originalRows.length === 1 && originalRows[0].id === 'noAnomaliesRow')) {
+                 applyTableControls();
+            }
+        });
     </script>
 </body>
+</html>

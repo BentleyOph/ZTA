@@ -2178,5 +2178,85 @@
         "auth_status": 1,
         "sign_in_success_ratio": 0.9340909090909091,
         "ID": 218
+    },
+    {
+        "time": 1748526404823,
+        "type": "LOGIN",
+        "user_id": "e026b331-5c21-4e79-a7c9-220e7800bfbb",
+        "ip_address": "172.19.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.9579093432007402,
+        "ID": 219
+    },
+    {
+        "time": 1748527443682,
+        "type": "LOGIN",
+        "user_id": "f7c71c7e-88a1-4de5-be25-aa87bcb1331a",
+        "ip_address": "172.19.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.7613636363636364,
+        "ID": 220
+    },
+    {
+        "time": 1748527460832,
+        "type": "LOGIN",
+        "user_id": "f7c71c7e-88a1-4de5-be25-aa87bcb1331a",
+        "ip_address": "172.19.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.778846153846154,
+        "ID": 221
+    },
+    {
+        "time": 1748527503919,
+        "type": "LOGIN",
+        "user_id": "f7c71c7e-88a1-4de5-be25-aa87bcb1331a",
+        "ip_address": "172.19.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.7939560439560439,
+        "ID": 222
+    },
+    {
+        "time": 1748527580662,
+        "type": "LOGIN",
+        "user_id": "f7c71c7e-88a1-4de5-be25-aa87bcb1331a",
+        "ip_address": "172.19.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.8071428571428572,
+        "ID": 223
+    },
+    {
+        "time": 1748527714638,
+        "type": "LOGIN",
+        "user_id": "f7c71c7e-88a1-4de5-be25-aa87bcb1331a",
+        "ip_address": "172.19.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.81875,
+        "ID": 224
+    },
+    {
+        "time": 1748530043704,
+        "type": "LOGIN",
+        "user_id": "51d70266-13ed-445d-9d1a-0185b9a35fec",
+        "ip_address": "172.19.0.1",
+        "auth_type": "code",
+        "auth_status": 1,
+        "sign_in_success_ratio": 0.9464285714285714,
+        "ID": 225
+    },
+    {
+        "time": 1748530039669,
+        "type": "LOGIN_ERROR",
+        "user_id": "51d70266-13ed-445d-9d1a-0185b9a35fec",
+        "ip_address": "172.19.0.1",
+        "auth_type": "code",
+        "auth_status": 0,
+        "sign_in_success_ratio": 0.9464285714285714,
+        "ID": 226
     }
 ]

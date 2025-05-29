@@ -41,8 +41,32 @@ Please copy the secret share and use it to approve the PAM request via this link
     # Send the email with the body to this approver
     send_email(email_sender,email_password,approver_email,subject,body)
 
+def send_email_to_analyst(analyst_email, anomaly_details):
+    subject_anomaly = "High Anomaly Detected in Access Request"
+    body = f"""Dear Security Analyst,
 
-        
+A high-probability anomaly has been detected with the following details:
+
+Request ID: {anomaly_details.get('request_ID', 'N/A')}
+User ID: {anomaly_details.get('user_id', 'N/A')}
+Anomaly Probability: {anomaly_details.get('anomaly_prob', 'N/A'):.3f}
+Resource Requested: {anomaly_details.get('resource_requested', 'N/A')}
+Location: {anomaly_details.get('location', 'N/A')}
+Device OS: {anomaly_details.get('device_OS', 'N/A')}
+User Trust Score: {anomaly_details.get('user_trust_score', 'N/A')}
+Access Decision: {'Allow' if anomaly_details.get('access_decision_val') == 1 else 'Deny' if anomaly_details.get('access_decision_val') == 0 else anomaly_details.get('access_decision_val', 'Pending')}
+Request Time: {anomaly_details.get('request_time', 'N/A')}
+Decision Time: {anomaly_details.get('timestamp', 'N/A')}
+
+Please review this activity immediately.
+
+Regards,
+Zero Trust Monitoring System
+"""
+    send_email(email_sender, email_password, analyst_email, subject_anomaly, body)
+
+
+
 
 
 

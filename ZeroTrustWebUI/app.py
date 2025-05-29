@@ -17,7 +17,7 @@ import re, uuid
 from .keycloak_config import *
 from .PAM import PAM
 from .Keycloak_functions import *
-from .PAM_Mail_Notification import send_email_to_approver
+from .PAM_Mail_Notification import send_email_to_approver, send_email_to_analyst
 from .trust_signal_collection import store_keycloak_events,load_events_data,process_events
 from .TrustAlgorithm import prepare_features_for_prediction, get_anomaly_score,get_anomaly_prediction
 import time 
@@ -361,6 +361,56 @@ def receive_and_process_access_request():
          policy_engine_verdict = "timeout" # Keep timeout verdict if no decision was found
 
     print(f"Final Policy Engine Verdict: {policy_engine_verdict}")
+
+    # Check for high anomaly probability and send notifications to security analysts
+    if access_decision and isinstance(access_decision, dict):
+        print("accessed")
+        trust_details = access_decision.get('trust_score_details', {})
+        anomaly_prob = None
+        
+        # Extract anomaly probability from trust score details
+        if 'anomaly_prob' in trust_details:
+            anomaly_prob = trust_details.get('anomaly_prob')
+        elif 'segments' in trust_details and isinstance(trust_details['segments'], dict):
+            anomaly_prob = trust_details['segments'].get('anomaly_prob')
+        
+        if anomaly_prob is not None:
+            try:
+                anomaly_prob_float = float(anomaly_prob)
+                if anomaly_prob_float > 0.5:  # 60% threshold
+                    print(f"High anomaly detected ({anomaly_prob_float:.3f}) for request ID {new_id}. Notifying security analysts.")
+                    
+                    # Get security analyst emails
+                    client_id_for_roles = keycloak_admin.get_client_id(KEYCLOAK_CLIENT_ID)
+                    analyst_role_name = ["Security Analyst"]
+                    security_analyst_emails = get_multiple_client_role_members_emails(keycloak_admin, client_id_for_roles, analyst_role_name)
+                    
+                    if security_analyst_emails:
+                        # Prepare anomaly details for email
+                        anomaly_details = {
+                            'request_ID': new_id,
+                            'user_id': access_request.get('user_id'),
+                            'anomaly_prob': anomaly_prob_float,
+                            'resource_requested': access_request.get('resource_requested'),
+                            'location': access_request.get('location'),
+                            'device_OS': access_request.get('device_OS'),
+                            'user_trust_score': access_decision.get('user_trust_score'),
+                            'access_decision_val': access_decision.get('access_decision'),
+                            'request_time': access_request.get('access_request_time'),
+                            'timestamp': datetime.fromtimestamp(access_decision.get('timestamp', time.time())).strftime('%Y-%m-%d %H:%M:%S')
+                        }
+                        
+                        # Send notification to each security analyst
+                        for analyst_email in security_analyst_emails:
+                            try:
+                                send_email_to_analyst(analyst_email, anomaly_details)
+                                print(f"Anomaly notification sent to {analyst_email} for request ID {new_id}")
+                            except Exception as e:
+                                print(f"Failed to send anomaly email to {analyst_email}: {e}")
+                    else:
+                        print("No security analysts found to notify for high anomaly.")
+            except (ValueError, TypeError):
+                print(f"Could not process anomaly probability '{anomaly_prob}' for request ID {new_id}")
 
     response_data = {'verdict': policy_engine_verdict}
     return jsonify(response_data)

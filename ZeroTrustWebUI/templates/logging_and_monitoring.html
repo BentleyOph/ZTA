@@ -30,6 +30,36 @@
             color: #334155;
             line-height: 1.6;
         }
+
+        .controls-container {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 1rem;
+            background-color: var(--white);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .controls-container input[type="text"],
+        .controls-container select {
+            padding: 0.65rem;
+            border: 1px solid #d1d5db; /* Tailwind gray-300 */
+            border-radius: 6px;
+            font-size: 0.875rem;
+            background-color: var(--white);
+            color: var(--dark);
+        }
+        .controls-container input[type="text"] {
+            flex-grow: 1;
+            min-width: 200px;
+        }
+        .controls-container label {
+            font-size: 0.875rem;
+            color: var(--dark);
+            margin-right: 0.25rem;
+        }
         
         .dashboard {
             display: flex;
@@ -319,6 +349,32 @@
             <div class="header">
                 <h1 class="page-title">Access Log Monitoring</h1>
             </div>
+
+            <div class="controls-container">
+                <input type="text" id="searchInputLogs" placeholder="Search (Req.ID, User ID, Resource, Location, OS)...">
+                
+                <label for="sortColumnLogs">Sort by:</label>
+                <select id="sortColumnLogs">
+                    <option value="2">Req. Time</option>
+                    <option value="6">Trust Score</option>
+                    <option value="7">Anomaly Prob.</option>
+                    <option value="9">Decision Time</option>
+                </select>
+                
+                <label for="sortOrderLogs">Order:</label>
+                <select id="sortOrderLogs">
+                    <option value="desc">Descending</option>
+                    <option value="asc">Ascending</option>
+                </select>
+                
+                <label for="filterDecisionLogs">Decision:</label>
+                <select id="filterDecisionLogs">
+                    <option value="">All Decisions</option>
+                    <option value="1">Allow</option>
+                    <option value="0">Deny</option>
+                    <option value="Pending">Pending</option>
+                </select>
+            </div>
             
             <div class="card">
                 <div class="card-header">
@@ -350,47 +406,53 @@
                                 <th>Decision Time</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {% for log in access_logs %}
-                            <tr>
-                                <td>{{ log['ID'] }}</td>
-                                <td title="{{ log['user_id'] }}">{{ log['user_id'][:8] }}...</td> <!-- Shorten for display -->
-                                <td>{{ log['access_request_time'] }}</td>
-                                <td>{{ log['resource_requested'] }}</td>
-                                <td>{{ log['location'] }}</td>
-                                <td>{{ log['device_OS'] }}</td>
-                                <td>
-                                    {% if log.user_trust_score == 'N/A' %}
-                                        N/A
-                                    {% else %}
-                                        {{ "%.3f"|format(log.user_trust_score|float) }}
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if log.anomaly_prob == 'N/A' %}
-                                        N/A
-                                    {% else %}
-                                        {{ "%.3f"|format(log.anomaly_prob|float) }}
-                                    {% endif %}
-                                </td>
-                                <td class="{% if log.access_decision_val == 1 %}decision-allow{% elif log.access_decision_val == 0 %}decision-deny{% else %}decision-pending{% endif %}">
-                                    {% if log.access_decision_val == 1 %}
-                                        Allow
-                                    {% elif log.access_decision_val == 0 %}
-                                        Deny
-                                    {% else %}
-                                        {{ log.access_decision_val }} {# Typically "Pending" #}
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if log.decision_timestamp %}
-                                        {{ log.decision_timestamp | int | timestamp_to_datetime }}
-                                    {% else %}
-                                        N/A
-                                    {% endif %}
-                                </td>
+                        <tbody id="accessLogsTableBody">
+                            {% if access_logs %}
+                                {% for log in access_logs %}
+                                <tr>
+                                    <td>{{ log['ID'] }}</td>
+                                    <td title="{{ log['user_id'] }}">{{ log['user_id'][:8] }}...</td>
+                                    <td data-sort-value="{{ log['access_request_time'] }}">{{ log['access_request_time'] }}</td>
+                                    <td>{{ log['resource_requested'] }}</td>
+                                    <td>{{ log['location'] }}</td>
+                                    <td>{{ log['device_OS'] }}</td>
+                                    <td data-sort-value="{{ log.user_trust_score if log.user_trust_score != 'N/A' else -1 }}">
+                                        {% if log.user_trust_score == 'N/A' %}
+                                            N/A
+                                        {% else %}
+                                            {{ "%.3f"|format(log.user_trust_score|float) }}
+                                        {% endif %}
+                                    </td>
+                                    <td data-sort-value="{{ log.anomaly_prob if log.anomaly_prob != 'N/A' else -1 }}">
+                                        {% if log.anomaly_prob == 'N/A' %}
+                                            N/A
+                                        {% else %}
+                                            {{ "%.3f"|format(log.anomaly_prob|float) }}
+                                        {% endif %}
+                                    </td>
+                                    <td data-filter-value="{{ log.access_decision_val }}" class="{% if log.access_decision_val == 1 %}decision-allow{% elif log.access_decision_val == 0 %}decision-deny{% else %}decision-pending{% endif %}">
+                                        {% if log.access_decision_val == 1 %}
+                                            Allow
+                                        {% elif log.access_decision_val == 0 %}
+                                            Deny
+                                        {% else %}
+                                            {{ log.access_decision_val }} {# Typically "Pending" #}
+                                        {% endif %}
+                                    </td>
+                                    <td data-sort-value="{{ log.decision_timestamp | default(0) }}">
+                                        {% if log.decision_timestamp %}
+                                            {{ log.decision_timestamp | int | timestamp_to_datetime }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                            <tr id="noLogsRow">
+                                <td colspan="10" style="text-align: center; padding: 1rem;">No access logs found.</td>
                             </tr>
-                            {% endfor %}
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
@@ -407,9 +469,113 @@
             window.location.href = '/revokeToken'; // Ensure this matches your logout route
         }
 
-        // Add a Jinja filter for converting timestamp to datetime string if not already present
-        // This is for client-side JS, but better to do it in Flask if possible.
-        // The Flask `app.py` now handles this conversion using a custom filter.
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('searchInputLogs');
+            const sortColumnSelect = document.getElementById('sortColumnLogs');
+            const sortOrderSelect = document.getElementById('sortOrderLogs');
+            const filterDecisionSelect = document.getElementById('filterDecisionLogs');
+            const tableBody = document.getElementById('accessLogsTableBody');
+            const originalRows = Array.from(tableBody.querySelectorAll('tr'));
+            const noLogsRow = document.getElementById('noLogsRow');
+            const colCount = 10; // Number of columns in the table
+
+            function getCellValueForSort(cell, isNumeric, isTimestampLikeString) {
+                let value = cell ? cell.getAttribute('data-sort-value') : null;
+                if (value === null && cell) value = cell.textContent; // Fallback
+
+                if (isNumeric) {
+                    const num = parseFloat(value);
+                    return isNaN(num) ? (sortOrderSelect.value === 'asc' ? Infinity : -Infinity) : num;
+                }
+                if (isTimestampLikeString) { // For YYYY-MM-DD HH:MM:SS strings or actual timestamps
+                    if (!isNaN(parseFloat(value)) && isFinite(value)) { // if it's a raw timestamp
+                         return parseFloat(value);
+                    }
+                    // For date strings, direct string comparison works if format is consistent (YYYY-MM-DD)
+                    return String(value).toLowerCase(); 
+                }
+                return String(value).toLowerCase();
+            }
+
+
+            function applyTableControls() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const sortColumn = parseInt(sortColumnSelect.value);
+                const sortOrder = sortOrderSelect.value;
+                const filterDecision = filterDecisionSelect.value;
+
+                let filteredRows = originalRows.filter(row => {
+                    if (row.id === 'noLogsRow' || row.id === 'noResultsRowLogs') return false;
+
+                    // Search filter (Req.ID, User ID, Resource, Location, Device OS)
+                    const searchableCols = [0, 1, 3, 4, 5]; 
+                    let matchesSearch = searchableCols.some(colIndex => {
+                        const cellText = row.cells[colIndex] ? row.cells[colIndex].textContent.toLowerCase() : '';
+                        return cellText.includes(searchTerm);
+                    });
+                    if (!matchesSearch && searchTerm) return false;
+                    
+                    // Decision filter
+                    if (filterDecision) {
+                        const decisionCell = row.cells[8]; // Decision column
+                        let decisionValue = decisionCell ? decisionCell.getAttribute('data-filter-value') : '';
+                        // Handle "Pending" which might be text or other value if not 0 or 1
+                        if (filterDecision === "Pending") {
+                            if (String(decisionValue) === "1" || String(decisionValue) === "0") return false;
+                        } else {
+                           if (String(decisionValue) !== filterDecision) return false;
+                        }
+                    }
+                    return true;
+                });
+
+                // Sort
+                filteredRows.sort((rowA, rowB) => {
+                    const cellA = rowA.cells[sortColumn];
+                    const cellB = rowB.cells[sortColumn];
+                    
+                    // Determine data type for sorting
+                    // Req. Time (2, string/date), Trust Score (6, num), Anomaly Prob (7, num), Decision Time (9, timestamp)
+                    const isNumeric = [6, 7].includes(sortColumn);
+                    const isTimestampLike = [2, 9].includes(sortColumn);
+
+                    let valA = getCellValueForSort(cellA, isNumeric, isTimestampLike);
+                    let valB = getCellValueForSort(cellB, isNumeric, isTimestampLike);
+                    
+                    if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+                    if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+                    return 0;
+                });
+
+                // Re-populate table
+                tableBody.innerHTML = '';
+                if (filteredRows.length > 0) {
+                    filteredRows.forEach(row => tableBody.appendChild(row));
+                } else if (noLogsRow && originalRows.includes(noLogsRow) && !searchTerm && !filterDecision) {
+                    tableBody.appendChild(noLogsRow);
+                }
+                else {
+                    const noResultsTr = document.createElement('tr');
+                    noResultsTr.id = 'noResultsRowLogs';
+                    const noResultsTd = document.createElement('td');
+                    noResultsTd.colSpan = colCount;
+                    noResultsTd.textContent = 'No logs match your criteria.';
+                    noResultsTd.style.textAlign = 'center';
+                    noResultsTd.style.padding = '1rem';
+                    noResultsTr.appendChild(noResultsTd);
+                    tableBody.appendChild(noResultsTr);
+                }
+            }
+
+            searchInput.addEventListener('input', applyTableControls);
+            sortColumnSelect.addEventListener('change', applyTableControls);
+            sortOrderSelect.addEventListener('change', applyTableControls);
+            filterDecisionSelect.addEventListener('change', applyTableControls);
+            
+            if (originalRows.length > 0 && !(originalRows.length === 1 && originalRows[0].id === 'noLogsRow')) {
+                applyTableControls();
+            }
+        });
     </script>
 </body>
 </html>
