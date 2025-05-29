@@ -9,7 +9,6 @@ from flask_oidc import OpenIDConnect
 from keycloak import KeycloakAuthenticationError, KeycloakOpenID
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
-import requests
 import yaml
 from Networking import Networking
 from keycloak import KeycloakAdmin
@@ -18,7 +17,7 @@ import re, uuid
 from .keycloak_config import *
 from .PAM import PAM
 from .Keycloak_functions import *
-from .PAM_Mail_Notification import send_email,send_email_to_approver
+from .PAM_Mail_Notification import send_email_to_approver
 from .trust_signal_collection import store_keycloak_events,load_events_data,process_events
 from .TrustAlgorithm import prepare_features_for_prediction, get_anomaly_score,get_anomaly_prediction
 import time 
@@ -555,294 +554,295 @@ def configure_policies():
 @app.route('/privilegedAccess', methods=['GET', 'POST'])
 @oidc.require_login
 def privilegedAccess():
-    # Get the current user's ID from the session
     current_user_id = session['oidc_auth_profile'].get('sub')
+    username = session['oidc_auth_profile'].get('name') # For sidebar
+    email = session['oidc_auth_profile'].get('email')   # For sidebar
+    user_role = session.get('user_role', "User")      # For sidebar
     
-    # Check if user already has a pending PAM request
-    existing_pending_request = AccessRequest.query.filter_by(
+    # Check if user has any pending PAM request to inform them
+    existing_pending_request_for_user = AccessRequest.query.filter_by(
         requestor_id=current_user_id,
         requestStatus='pending'
     ).order_by(AccessRequest.id.desc()).first()
     
-    if existing_pending_request:
-        # User already has a pending request, redirect to approval status
-        return redirect(url_for('approval_status'))
-    
-    #dynamically query the keycloak API for the list of approvers to display for the requestor
     client_id = keycloak_admin.get_client_id(KEYCLOAK_CLIENT_ID)
-    role_name = ["Security Analyst","Branch Manager"]
-    email_addresses = get_multiple_client_role_members_emails(keycloak_admin,client_id, role_name)
+    # Define roles that can be approvers
+    approver_role_names = ["Security Analyst", "Branch Manager"] 
+    email_addresses = get_multiple_client_role_members_emails(keycloak_admin, client_id, approver_role_names)
 
-    num_total_approvers = len(email_addresses) # Renamed for clarity
+    num_total_approvers = len(email_addresses)
+    global THRESHOLD # Ensure THRESHOLD is accessible for new requests
 
-    global THRESHOLD
+    # Calculate THRESHOLD for new requests based on currently available approvers
     if num_total_approvers == 0:
-        # It's better to handle this case by not allowing request submission if no approvers.
-        # For now, return an error if form is submitted.
-        # The template rendering should ideally check this too.
-        THRESHOLD = 0 # Or some indicator that PAM is not possible
+        THRESHOLD = 0 
     elif num_total_approvers == 1:
-        THRESHOLD = 1 # SSS threshold k=1
-    else: # num_total_approvers >= 2
-        # Policy: 80% of total approvers, but at least 2.
+        THRESHOLD = 1
+    else:
         calculated_threshold = math.floor(num_total_approvers * 0.8)
         THRESHOLD = max(2, calculated_threshold)
+    print(f"Calculated THRESHOLD for new requests: {THRESHOLD} (based on {num_total_approvers} total approvers)")
 
     if request.method == 'POST':
-        # Get form data
-        resource_name = "All resources"
+        resource_name = "All resources" # As per current logic
         reason_for_access = request.form['reason_for_access']
         access_duration = int(request.form['access_duration'])
-        # Get the current user's ID and username from the session
-        requestor_id = session['oidc_auth_profile'].get('sub')
         requestor_username = session['oidc_auth_profile'].get('preferred_username')
-        # Capture the time of the request
         time_of_request = datetime.now()
-
-        # Extract selected approvers in a list
         selected_approvers = request.form.getlist('approvers')
-
         num_selected_shares = len(selected_approvers)
-        
-        if num_total_approvers == 0: # Should be caught earlier, but double check
-             return "No approvers available to assign for PAM request.", 400
 
-        # Validate number of selected approvers
-        # Form implies "Select at least two", this check can be more dynamic based on THRESHOLD
-        # For SSS, k (THRESHOLD) must be > 0. n (num_selected_shares) must be >= k.
-        # And policy might dictate minimum n.
-        if THRESHOLD == 0 : # Should not happen if num_total_approvers > 0
-            return "System error: Invalid approval threshold calculated.", 500
+        error_message = None
+        if num_total_approvers == 0:
+            error_message="No approvers available for PAM request. Cannot create."
+        elif THRESHOLD == 0 and num_total_approvers > 0: # Should ideally not be hit if above is correct
+            error_message="System error: Invalid approval threshold calculated."
+        elif num_selected_shares < THRESHOLD:
+            error_message=f"Please select at least {THRESHOLD} approver(s). You selected {num_selected_shares}."
+        elif not (1 <= access_duration <= 100):
+            error_message="Invalid access duration. Please enter a value between 1 and 100 minutes."
 
-        if num_selected_shares < THRESHOLD:
-             return f"Please select at least {THRESHOLD} approver(s) to meet the approval policy. You selected {num_selected_shares}.", 400
-        
-        # Ensure num_selected_shares is at least 1 (or 2 if THRESHOLD can be 1 but policy needs 2 shares)
-        # The check num_selected_shares < THRESHOLD already covers k > 0 and k <= n if THRESHOLD >= 1
-        # If THRESHOLD is 1 (e.g. only 1 total approver), num_selected_shares must be at least 1.
-        # If THRESHOLD is 2, num_selected_shares must be at least 2.
+        if error_message:
+            return render_template('privilegedAccessManagement.html', 
+                                   email_addresses=email_addresses, 
+                                   existing_pending_request=existing_pending_request_for_user,
+                                   error_message=error_message,
+                                   username=username, email=email, user_id=current_user_id, user_role=user_role)
 
         secret_key = PAM.generate_secret_message(45)
         secret_key_identifier = PAM.generate_secret_message(4) 
-
+        # Use the THRESHOLD calculated for new requests for share generation
         secret_shares_list = PAM.generate_secret_shares(THRESHOLD, num_selected_shares, secret_key, secret_key_identifier)
-
-        if not (1 <= access_duration <= 100):
-            return "Invalid access duration. Please enter a value between 1 and 100 minutes."
 
         new_request = AccessRequest(
             resource_name=resource_name,
             reason_for_access=reason_for_access,
             access_duration=access_duration,
-            requestor_id=requestor_id,
+            requestor_id=current_user_id,
             requestor_username=requestor_username,
             time_of_request=time_of_request,
             requestStatus='pending',  
-            secret_key=secret_key,    
+            secret_key=secret_key    
         )
-
         db.session.add(new_request)
         try:
-            db.session.commit()
+            db.session.commit() # Commit to get new_request.id
         except Exception as e:
             db.session.rollback()
             print(f"Error saving access request: {e}")
-            return "Error processing request.", 500
+            return render_template('privilegedAccessManagement.html', 
+                                   email_addresses=email_addresses, 
+                                   existing_pending_request=existing_pending_request_for_user,
+                                   error_message="Error saving request. Please try again.",
+                                   username=username, email=email, user_id=current_user_id, user_role=user_role)
 
-        for index, approver_email in enumerate(selected_approvers):
+        for index, approver_email_addr in enumerate(selected_approvers):
+            approver_user_id = get_user_id_by_email(keycloak_admin, approver_email_addr)
+            if not approver_user_id:
+                print(f"Warning: Could not find user ID for approver email {approver_email_addr}")
+                # Decide how to handle: skip this approver, or fail request? For now, skip.
+                continue 
+            
             approver_secret_share = secret_shares_list[index] 
-            send_email_to_approver(approver_email,requestor_id,requestor_username,reason_for_access,access_duration,approver_secret_share)
+            send_email_to_approver(approver_email_addr, current_user_id, requestor_username, reason_for_access, access_duration, approver_secret_share)
 
             approver = Approver(
-                approverID=get_user_id_by_email(keycloak_admin,approver_email),
-                approverEmail=approver_email,
+                approverID=approver_user_id,
+                approverEmail=approver_email_addr,
                 request_id=new_request.id,
                 approver_secret_share=approver_secret_share  
             )
             db.session.add(approver)
-
+        
         try:
             db.session.commit()
         except Exception as e:
             db.session.rollback()
-            return "Error processing request.", 500
+            # Clean up the created AccessRequest if saving approvers fails
+            AccessRequest.query.filter_by(id=new_request.id).delete()
+            db.session.commit()
+            print(f"Error saving approvers for request {new_request.id}: {e}")
+            return render_template('privilegedAccessManagement.html', 
+                                   email_addresses=email_addresses, 
+                                   existing_pending_request=existing_pending_request_for_user,
+                                   error_message="Error saving approver details. Request cancelled.",
+                                   username=username, email=email, user_id=current_user_id, user_role=user_role)
 
-        return redirect(url_for('approval_status'))
+        return redirect(url_for('approval_status', request_id=new_request.id))
 
-    return render_template('privilegedAccessManagement.html',email_addresses=email_addresses)
+    return render_template('privilegedAccessManagement.html', 
+                           email_addresses=email_addresses, 
+                           existing_pending_request=existing_pending_request_for_user,
+                           username=username, email=email, user_id=current_user_id, user_role=user_role)
 
 
-@app.route('/approval_status', methods=['GET','POST'])
-def approval_status():
-    global THRESHOLD
-    latest_request = AccessRequest.query.order_by(AccessRequest.id.desc()).first()
+@app.route('/approval_status/<int:request_id>', methods=['GET','POST']) # request_id is now mandatory
+@oidc.require_login
+def approval_status(request_id):
+    global THRESHOLD 
+    current_user_id = session['oidc_auth_profile'].get('sub')
+    username = session['oidc_auth_profile'].get('name')
+    email = session['oidc_auth_profile'].get('email')
+    user_role = session.get('user_role', "User")
 
-    if not latest_request:
-        return render_template('no_requests.html') 
+    target_request = AccessRequest.query.filter_by(id=request_id, requestor_id=current_user_id).first()
 
-    latest_request_id = latest_request.id
-    secret_from_db = latest_request.secret_key
+    if not target_request:
+        # flash(f"PAM Request ID {request_id} not found or you do not have permission to view it.", "error")
+        return redirect(url_for('home')) 
 
-    associated_approvers = Approver.query.filter_by(request_id=latest_request_id).all()
-    approvers_count = len(associated_approvers)
+    secret_from_db = target_request.secret_key
+
+    associated_approvers = Approver.query.filter_by(request_id=target_request.id).all()
+    approvers_count = len(associated_approvers) # This is 'n' for this specific request
     approved_approvers_records = [appr for appr in associated_approvers if appr.approver_action == 'approved']
     approved_approvers_count = len(approved_approvers_records)
 
-    if THRESHOLD is None and approvers_count > 0:
-        THRESHOLD = math.floor(approvers_count * 0.8)
-    elif THRESHOLD is None:
-        THRESHOLD = 0 
-
-    # Check if PAM session has expired
-    APPROVAL_TIME = 6 
+    # THRESHOLD ('k') for *this specific request* should be based on how shares were generated.
+    # If THRESHOLD was stored with the request, use that. Otherwise, recalculate based on assigned approvers.
+    # For simplicity, let's recalculate. This implies 'k' is dynamic for policy rather than fixed at share creation.
+    # A more robust system might store 'k' with the AccessRequest.
+    if approvers_count == 0:
+        current_request_threshold = 0 # Cannot be approved
+    elif approvers_count == 1:
+        current_request_threshold = 1
+    else:
+        calculated_threshold = math.floor(approvers_count * 0.8) # Example policy
+        current_request_threshold = max(2, calculated_threshold)
+    
+    APPROVAL_WINDOW_MINUTES = 60 
     current_time = datetime.now()
-    expiration_time = latest_request.time_of_request + timedelta(minutes=APPROVAL_TIME) 
-    expiration_time_iso = expiration_time.isoformat()
-    pam_expired = current_time > expiration_time
+    approval_expiration_time = target_request.time_of_request + timedelta(minutes=APPROVAL_WINDOW_MINUTES) 
+    approval_expiration_time_iso = approval_expiration_time.isoformat()
+    
+    is_expired_for_approval = current_time > approval_expiration_time
 
     if request.method == 'POST':
-         data = request.json
-         action = data.get('action')
+        data = request.json
+        action = data.get('action')
 
-         if action == 'reconstruct_secret':
-            if pam_expired:
-                return jsonify({'ERR_EXPIRED': 'This PAM request has expired. Please create a new request.'}), 400
+        if action == 'reconstruct_secret':
+            if is_expired_for_approval and target_request.requestStatus != 'approved':
+                return jsonify({'ERR_EXPIRED': 'This PAM request has expired for approval. Please create a new request.'}), 400
             
-            if approved_approvers_count >= THRESHOLD:
-                message = 'Threshold for Approval Met! Reconstructing key...'
+            if approved_approvers_count >= current_request_threshold: # Use specific request's threshold
                 secret_shares = [approver.approver_secret_share for approver in approved_approvers_records if approver.approver_secret_share] 
 
-                if len(secret_shares) < THRESHOLD:
-                     print("Error: Not enough valid shares found despite meeting approval count.")
-                     return jsonify({'ERR_RECONSTRUCT': 'Could not retrieve enough valid shares.'}), 500
+                if len(secret_shares) < current_request_threshold:
+                     print(f"Error: Not enough valid shares for request {target_request.id} despite {approved_approvers_count} approvals needed {current_request_threshold}.")
+                     return jsonify({'ERR_RECONSTRUCT': 'Could not retrieve enough valid shares for reconstruction.'}), 500
 
                 reconstructed_secret_val = PAM.reconstruct_secret_from_base64_shares(secret_shares)
                 reconstructed_secret_str = None
                 if isinstance(reconstructed_secret_val, bytes):
-                    try:
-                        reconstructed_secret_str = reconstructed_secret_val.decode('utf-8')
-                    except UnicodeDecodeError:
-                        print("Warning: Could not decode reconstructed secret bytes to UTF-8.")
-                        reconstructed_secret_str = str(reconstructed_secret_val)
-                elif isinstance(reconstructed_secret_val, str):
-                    reconstructed_secret_str = reconstructed_secret_val
-                else:
-                     print(f"Warning: Unexpected type from reconstruction: {type(reconstructed_secret_val)}")
-                     reconstructed_secret_str = str(reconstructed_secret_val)
-
-                print(f"Secret from DB: {secret_from_db}")
-                print(f"Reconstructed Secret (Decoded): {reconstructed_secret_str}")
+                    try: reconstructed_secret_str = reconstructed_secret_val.decode('utf-8')
+                    except UnicodeDecodeError: reconstructed_secret_str = str(reconstructed_secret_val)
+                elif isinstance(reconstructed_secret_val, str): reconstructed_secret_str = reconstructed_secret_val
+                else: reconstructed_secret_str = str(reconstructed_secret_val)
 
                 if reconstructed_secret_str == secret_from_db:
-                    latest_request.requestStatus = 'approved'
-                    db.session.commit()
+                    if target_request.requestStatus != 'approved':
+                        target_request.requestStatus = 'approved'
+                        db.session.commit()
                     return jsonify({'reconstructed_secret': reconstructed_secret_str, 'message': 'Secret reconstructed successfully.'})
                 else:
-                    print("Error: Reconstructed secret does not match the one stored for this request.")
+                    print(f"Error: Reconstructed secret for request {target_request.id} does not match DB.")
                     return jsonify({'ERR_RECONSTRUCT': 'Secret reconstruction failed or mismatch.'}), 500
-
             else: 
-                 return jsonify({'ERR_THRESH': f'Minimum Threshold ({THRESHOLD}) for Secret Key reconstruction Not reached! ({approved_approvers_count} approved)'})
-         else:
-             return jsonify({'message': 'Action processed or not applicable.'})
+                 return jsonify({'ERR_THRESH': f'Minimum Threshold ({current_request_threshold}) for Secret Key reconstruction Not reached! ({approved_approvers_count} of {approvers_count} approved)'})
+        return jsonify({'error': 'Invalid action.'}), 400 
 
+    # GET request display logic
     pending_approvers = approvers_count - approved_approvers_count
-    approval_info = f'{approved_approvers_count}/{approvers_count} approvers approved, {pending_approvers} pending'
-    message = ''
-    reconstructed_secret_str = None 
+    approval_info = f'{approved_approvers_count}/{approvers_count} approvers approved. {pending_approvers} pending.'
+    display_message = ''
+    reconstructed_secret_for_display = None 
+    current_request_status_display = target_request.requestStatus
 
-    if pam_expired:
-        message = 'This PAM request has expired. You can create a new request.'
-        request_status = 'expired'
-    elif latest_request.requestStatus == 'approved':
-        message = 'Request already approved.'
-        request_status = latest_request.requestStatus
-        if approved_approvers_count >= THRESHOLD:
+    if current_request_status_display == 'expired' or (is_expired_for_approval and current_request_status_display != 'approved'):
+        display_message = 'This PAM request has expired. You can create a new request.'
+        if target_request.requestStatus != 'expired': # Ensure DB reflects this
+             target_request.requestStatus = 'expired'
+             db.session.commit()
+        current_request_status_display = 'expired'
+    elif current_request_status_display == 'approved':
+        display_message = 'Request already approved.'
+        if approved_approvers_count >= current_request_threshold: # Check against specific request's threshold
             secret_shares = [approver.approver_secret_share for approver in approved_approvers_records if approver.approver_secret_share]
-            if len(secret_shares) >= THRESHOLD:
-                reconstructed_secret_val = PAM.reconstruct_secret_from_base64_shares(secret_shares)
-                if isinstance(reconstructed_secret_val, bytes):
-                    try:
-                        reconstructed_secret_str = reconstructed_secret_val.decode('utf-8')
-                    except UnicodeDecodeError:
-                        reconstructed_secret_str = str(reconstructed_secret_val)
-                elif isinstance(reconstructed_secret_val, str):
-                    reconstructed_secret_str = reconstructed_secret_val
-                else:
-                    reconstructed_secret_str = str(reconstructed_secret_val)
+            if len(secret_shares) >= current_request_threshold:
+                reconstructed_val_display = PAM.reconstruct_secret_from_base64_shares(secret_shares)
+                if isinstance(reconstructed_val_display, bytes):
+                    try: reconstructed_secret_for_display = reconstructed_val_display.decode('utf-8')
+                    except UnicodeDecodeError: reconstructed_secret_for_display = str(reconstructed_val_display)
+                elif isinstance(reconstructed_val_display, str): reconstructed_secret_for_display = reconstructed_val_display
+                else: reconstructed_secret_for_display = str(reconstructed_val_display)
 
-                if reconstructed_secret_str != secret_from_db:
-                    print("Warning: Reconstructed secret in approved state doesn't match DB record.")
-                    message = "Request approved, but encountered an issue retrieving the secret."
-                    reconstructed_secret_str = "Error retrieving secret" 
+                if reconstructed_secret_for_display != secret_from_db:
+                    display_message += " However, there was an issue retrieving the secret for display."
+                    reconstructed_secret_for_display = "Error displaying secret" 
             else:
-                 print("Warning: Request approved but not enough shares found for reconstruction.")
-                 message = "Request approved, but could not retrieve necessary shares."
-                 reconstructed_secret_str = None
-        else:
-             print("Warning: Request approved but approval count is below threshold.")
-             message = "Request approved, but inconsistency detected."
-             reconstructed_secret_str = None
-
-    elif approved_approvers_count >= THRESHOLD:
-         message = 'Approvals threshold met. Ready for secret reconstruction.'
-         request_status = latest_request.requestStatus
+                 display_message += " However, could not retrieve necessary shares for display."
+        else: 
+            display_message += " However, inconsistency in approval count detected."
+    elif approved_approvers_count >= current_request_threshold:
+         display_message = 'Approvals threshold met. Ready for secret reconstruction.'
     else: 
-        message = 'Waiting for more approvers...'
-        request_status = latest_request.requestStatus
+        display_message = 'Waiting for more approvers...'
 
     return render_template('approval_status.html',
                            approval_info=approval_info,
-                           message=message,
-                           reconstructed_secret=reconstructed_secret_str, 
-                           threshold=THRESHOLD,
-                           expiration_time=expiration_time_iso,
-                           request_status=request_status, 
-                           request_id=latest_request_id,
-                           pam_expired=pam_expired)
+                           message=display_message,
+                           reconstructed_secret=reconstructed_secret_for_display, 
+                           threshold=current_request_threshold, # Pass the specific request's threshold
+                           expiration_time=approval_expiration_time_iso,
+                           request_status=current_request_status_display, 
+                           request_id=target_request.id,
+                           pam_expired=is_expired_for_approval,
+                           username=username, email=email, user_id=current_user_id, user_role=user_role)
+
 @app.route('/success', methods = ['GET'])
 def approval_success():
     return render_template('success.html')
 
-@app.route('/enterSecretKey', methods=['GET', 'POST'])
-def process_secret_key():
+@app.route('/enterSecretKey/<int:request_id>', methods=['GET', 'POST'])
+@oidc.require_login
+def process_secret_key(request_id):
+    current_user_id = session.get('oidc_auth_profile', {}).get('sub')
+    username = session.get('oidc_auth_profile', {}).get('name')
+    email = session.get('oidc_auth_profile', {}).get('email')
+    user_role = session.get('user_role', "User")
+
+    if not current_user_id:
+        return redirect(url_for('index'))
+
+    target_request = AccessRequest.query.filter_by(
+        id=request_id,
+        requestor_id=current_user_id,
+        requestStatus='approved' 
+    ).first()
+
+    if not target_request:
+        # flash(f"Approved PAM request ID {request_id} not found or not accessible.", "error")
+        return redirect(url_for('home'))
 
     if request.method == 'POST':
         entered_secret_key = request.form.get('secret_key')
-        current_user_logged_in_id = session.get('oidc_auth_profile', {}).get('sub')
-        if not current_user_logged_in_id:
-            return "User session not found. Please log in again.", 401
-
-        latest_approved_request = AccessRequest.query.filter_by(
-            requestor_id=current_user_logged_in_id,
-            requestStatus='approved' # Ensure it's an *approved* request by the approvers
-        ).order_by(AccessRequest.id.desc()).first()
-
-        if latest_approved_request and latest_approved_request.secret_key:
-            secret_message_from_db = latest_approved_request.secret_key
-            
-            if entered_secret_key == secret_message_from_db:
-                print(f"PAM Secret key VALID for Request ID {latest_approved_request.id} by user {current_user_logged_in_id}.")
-                access_duration = latest_approved_request.access_duration
-                
-                # Store PAM session details
-                session['privileged_access_active_for_request_id'] = latest_approved_request.id
-                session['privileged_access_user_id'] = latest_approved_request.requestor_id
-                session['privileged_access_expires_at'] = (datetime.now() + timedelta(minutes=access_duration)).timestamp()
-                
-                print(f"PAM session activated for user {latest_approved_request.requestor_id}, expires at {datetime.fromtimestamp(session['privileged_access_expires_at'])}")
-                return redirect(url_for('home')) 
-            else:
-                print(f"PAM Secret key INVALID for Request ID {latest_approved_request.id}.")
-                # TODO: Render template with error message
-                return "Invalid secret key. Please try again.", 400 
+        if target_request.secret_key == entered_secret_key:
+            access_duration = target_request.access_duration
+            session['privileged_access_active_for_request_id'] = target_request.id
+            session['privileged_access_user_id'] = target_request.requestor_id
+            session['privileged_access_expires_at'] = (datetime.now() + timedelta(minutes=access_duration)).timestamp()
+            # flash(f"Privileged access activated for {access_duration} minutes!", "success")
+            return redirect(url_for('home')) 
         else:
-            print(f"Error: Could not find an approved PAM request with a secret key for user {current_user_logged_in_id}.")
-            # TODO: Render template with error message
-            return "Error: Could not validate secret key. No relevant approved request found.", 404
-            
-    return render_template('enterSecretKey.html')
-
+            return render_template('enterSecretKey.html', 
+                                   request_id=request_id, 
+                                   error="Invalid secret key.",
+                                   username=username, email=email, user_id=current_user_id, user_role=user_role)
+         
+    return render_template('enterSecretKey.html', 
+                           request_id=request_id,
+                           username=username, email=email, user_id=current_user_id, user_role=user_role)
             
 
 @app.route('/hidden_resource', methods=['POST'])
