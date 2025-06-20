@@ -48,7 +48,8 @@ The platform consists of several key components that work together to enforce Ze
 
 5.  **P2P Network (`Networking.py`):** A custom networking layer that enables the independent components to communicate directly with each other without a central broker, passing requests and decisions between nodes.
 
-   ![image](https://github.com/user-attachments/assets/08a41f0d-0d01-4f83-926e-9a6f5e63f74b)
+   ![image](https://github.com/user-attachments/assets/09120f91-c20e-4b0a-be6c-978ac89746db)
+
 
 
 ### Standard Access Request Flow
