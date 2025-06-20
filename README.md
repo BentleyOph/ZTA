@@ -1,7 +1,3 @@
-Of course! Here is a professional and comprehensive README file for your project. It's structured to highlight the key features, architecture, and technical depth, making it perfect for your CV portfolio or a GitHub repository.
-
----
-
 # Zero Trust Architecture (ZTA) Platform
 
 ![Project Banner](https://img.shields.io/badge/Project-Zero%20Trust%20Platform-blue)
@@ -9,7 +5,7 @@ Of course! Here is a professional and comprehensive README file for your project
 ![Framework](https://img.shields.io/badge/Framework-Flask-red)
 ![Auth](https://img.shields.io/badge/Authentication-Keycloak-yellow)
 
-This project is a comprehensive implementation of a Zero Trust Architecture (ZTA) platform designed to provide secure, dynamic, and context-aware access control to protected resources. The system moves beyond traditional perimeter-based security by continuously evaluating trust and enforcing granular policies for every access request.
+This project is an implementation of a Zero Trust Architecture (ZTA) platform designed to provide secure, dynamic, and context-aware access control to protected resources. The system moves beyond traditional perimeter-based security by continuously evaluating trust and enforcing granular policies for every access request.
 
 It integrates a dynamic **Trust Engine**, a configurable **Policy Engine**, and a **Flask-based Web UI**, all orchestrated through a peer-to-peer communication network. Authentication and identity management are handled by **Keycloak**, while a sophisticated **Privileged Access Management (PAM)** module provides secure, just-in-time access using Shamir's Secret Sharing for multi-party approval.
 
